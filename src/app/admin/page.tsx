@@ -29,7 +29,7 @@ interface SystemHealth {
 
 export default function AdminPortal() {
   const [adminKey, setAdminKey] = useState<string>("urivalent_admin_secret_key");
-  const [testEmail, setTestEmail] = useState<string>("gathamwangi45@gmail.com");
+  const [testEmail, setTestEmail] = useState<string>("gathuamwangi45@gmail.com");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [health, setHealth] = useState<SystemHealth | null>(null);
