@@ -462,30 +462,9 @@ export default function PublicDashboard() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#164A41] border-t-2 border-[#F1B24A] text-white/80 py-8 px-4 text-center mt-auto">
-        <div className="max-w-6xl mx-auto space-y-3 text-xs">
-          <div className="font-bold tracking-widest uppercase text-[#9DC88D]">
-            Urivalent AI Intelligence Pipeline
-          </div>
-          <p className="text-white/60 max-w-lg mx-auto">
-            Automated intelligence compiled daily at 08:50 AM EAT. Tracking frontier models, hyperscaler silicon, energy grids, and open-source velocity.
-          </p>
-          <div className="flex items-center justify-center gap-4 text-xs font-semibold pt-2">
-            <a href="http://localhost:8000/preview-brief" target="_blank" rel="noreferrer" className="text-[#F1B24A] hover:underline">
-              Live HTML Brief
-            </a>
-            <span>&bull;</span>
-            <a href="http://localhost:8000/health" target="_blank" rel="noreferrer" className="text-[#9DC88D] hover:underline">
-              API Health
-            </a>
-            <span>&bull;</span>
-            <Link href="/admin" className="text-[#F1B24A] hover:underline">
-              Operations Command
-            </Link>
-          </div>
-          <div className="text-[10px] text-[#9DC88D]/70 pt-2">
-            &copy; 2026 Urivalent. Zero-Cost Full-Stack Architecture.
-          </div>
+      <footer className="bg-[#164A41] border-t-2 border-[#F1B24A] text-white/80 py-4 px-4 text-center mt-auto">
+        <div className="max-w-6xl mx-auto text-xs text-[#9DC88D]/80">
+          &copy; 2026 Urivalent. All systems nominal.
         </div>
       </footer>
     </div>
