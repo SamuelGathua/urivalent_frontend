@@ -37,7 +37,7 @@ export default function AdminPortal() {
   const [adminUser, setAdminUser] = useState<string>("");
 
   // Lock Screen Form State
-  const [loginUsername, setLoginUsername] = useState<string>("admin");
+  const [loginUsername, setLoginUsername] = useState<string>("");
   const [loginPasscode, setLoginPasscode] = useState<string>("");
   const [showPasscode, setShowPasscode] = useState<boolean>(false);
   const [loginLoading, setLoginLoading] = useState<boolean>(false);
@@ -402,7 +402,7 @@ export default function AdminPortal() {
                   onChange={(e) => setLoginUsername(e.target.value)}
                   required
                   autoComplete="username"
-                  placeholder="admin"
+                  placeholder="Administrator Username"
                   className="w-full px-4 py-2.5 rounded-lg border-2 border-[#9DC88D] text-[#164A41] font-medium focus:border-[#F1B24A] focus:outline-none transition text-sm bg-[#F8FAF8]"
                 />
               </div>
@@ -458,8 +458,7 @@ export default function AdminPortal() {
 
             <div className="mt-6 pt-5 border-t border-gray-100 text-center">
               <p className="text-[11px] text-gray-500 leading-relaxed">
-                Credentials configured in <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[10px]">.env</code>{" "}
-                (<code className="font-mono text-[10px]">ADMIN_USERNAME</code> &amp; <code className="font-mono text-[10px]">ADMIN_PASSWORD</code>).
+                Credentials configured via environment variables (<code className="font-mono text-[10px]">ADMIN_USERNAME</code> &amp; <code className="font-mono text-[10px]">ADMIN_PASSWORD</code>).
               </p>
             </div>
           </div>
