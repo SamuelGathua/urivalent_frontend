@@ -28,17 +28,69 @@ interface SystemHealth {
 }
 
 export default function AdminPortal() {
-  const [adminKey, setAdminKey] = useState<string>("urivalent_admin_secret_key");
+  // Authentication & Lock State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+  const [adminToken, setAdminToken] = useState<string>("");
+  const [adminUser, setAdminUser] = useState<string>("");
+
+  // Lock Screen Form State
+  const [loginUsername, setLoginUsername] = useState<string>("admin");
+  const [loginPasscode, setLoginPasscode] = useState<string>("");
+  const [showPasscode, setShowPasscode] = useState<boolean>(false);
+  const [loginLoading, setLoginLoading] = useState<boolean>(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // Dashboard State
   const [testEmail, setTestEmail] = useState<string>("gathuamwangi45@gmail.com");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [health, setHealth] = useState<SystemHealth | null>(null);
 
-  // Load telemetry
+  // 1. Verify existing session on mount
   useEffect(() => {
-    fetchHealth();
+    async function verifyExistingSession() {
+      setIsCheckingAuth(true);
+      const savedToken = typeof window !== "undefined" ? localStorage.getItem("urivalent_admin_token") : null;
+      const savedUser = typeof window !== "undefined" ? localStorage.getItem("urivalent_admin_username") : null;
+
+      if (!savedToken) {
+        setIsAuthenticated(false);
+        setIsCheckingAuth(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:8000/admin/verify", {
+          headers: {
+            Authorization: `Bearer ${savedToken}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setAdminToken(savedToken);
+          setAdminUser(data.username || savedUser || "admin");
+          setIsAuthenticated(true);
+          fetchHealth();
+        } else {
+          // Token expired or invalid
+          localStorage.removeItem("urivalent_admin_token");
+          localStorage.removeItem("urivalent_admin_username");
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        console.warn("Could not verify session with backend:", err);
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    }
+
+    verifyExistingSession();
   }, []);
 
+  // 2. Fetch live system health
   async function fetchHealth() {
     try {
       const res = await fetch("http://localhost:8000/health");
@@ -47,11 +99,82 @@ export default function AdminPortal() {
         setHealth(json);
       }
     } catch (err) {
-      console.warn("Could not fetch health:", err);
+      console.warn("Could not fetch health telemetry:", err);
     }
   }
 
-  // Trigger Test Email
+  // 3. Unlock Admin Console (Login)
+  async function handleUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    setLoginError(null);
+    setLoginLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:8000/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: loginUsername.trim(),
+          password: loginPasscode.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.access_token) {
+        const token = data.access_token;
+        const username = data.username || loginUsername;
+        setAdminToken(token);
+        setAdminUser(username);
+        setIsAuthenticated(true);
+        localStorage.setItem("urivalent_admin_token", token);
+        localStorage.setItem("urivalent_admin_username", username);
+        setLoginPasscode("");
+        fetchHealth();
+      } else {
+        setLoginError(data.detail || "Authentication rejected: Invalid administrator username or passcode.");
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setLoginError(`Connection failure: ${errorMsg}. Please ensure FastAPI is running.`);
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  // 4. Lock Admin Console (Logout)
+  async function handleLock() {
+    try {
+      await fetch("http://localhost:8000/admin/logout", { method: "POST" });
+    } catch {
+      // Ignore network errors on logout
+    }
+    localStorage.removeItem("urivalent_admin_token");
+    localStorage.removeItem("urivalent_admin_username");
+    setAdminToken("");
+    setAdminUser("");
+    setIsAuthenticated(false);
+    setMessage(null);
+  }
+
+  // Helper for authenticated headers
+  function getAuthHeaders(): HeadersInit {
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${adminToken}`,
+      "X-Admin-Key": "urivalent_admin_secret_key",
+    };
+  }
+
+  // Handle unauthorized response
+  function handleUnauthorized() {
+    setMessage({ type: "error", text: "Session expired or unauthorized. Please unlock the terminal again." });
+    handleLock();
+  }
+
+  // 5. Trigger Test Email
   async function handleSendTestEmail(e: React.FormEvent) {
     e.preventDefault();
     if (!testEmail) return;
@@ -62,12 +185,14 @@ export default function AdminPortal() {
     try {
       const res = await fetch("http://localhost:8000/admin/test-email", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Key": adminKey,
-        },
-        body: JSON.stringify({ email: testEmail, admin_key: adminKey }),
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ email: testEmail }),
       });
+
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
 
       const data = await res.json();
       if (res.ok) {
@@ -90,7 +215,7 @@ export default function AdminPortal() {
     }
   }
 
-  // Trigger Force News
+  // 6. Trigger Force News Ingestion
   async function handleForceNews() {
     setLoadingAction("force_news");
     setMessage(null);
@@ -98,8 +223,14 @@ export default function AdminPortal() {
     try {
       const res = await fetch("http://localhost:8000/admin/force-news", {
         method: "POST",
-        headers: { "X-Admin-Key": adminKey },
+        headers: getAuthHeaders(),
       });
+
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
       const data = await res.json();
       if (res.ok) {
         setMessage({
@@ -121,7 +252,7 @@ export default function AdminPortal() {
     }
   }
 
-  // Trigger Morning Brief
+  // 7. Trigger Full Morning Delivery Cycle
   async function handleSendMorningBrief() {
     if (!confirm("Are you sure you want to trigger the full Morning Briefing dispatch to all active subscribers?")) {
       return;
@@ -133,8 +264,14 @@ export default function AdminPortal() {
     try {
       const res = await fetch("http://localhost:8000/admin/send-morning-brief", {
         method: "POST",
-        headers: { "X-Admin-Key": adminKey },
+        headers: getAuthHeaders(),
       });
+
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
       const data = await res.json();
       if (res.ok) {
         setMessage({
@@ -156,10 +293,190 @@ export default function AdminPortal() {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // RENDER: LOADING CHECK
+  // ---------------------------------------------------------------------------
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-[#164A41] text-white flex items-center justify-center font-sans">
+        <div className="text-center space-y-3">
+          <div className="h-10 w-10 border-4 border-[#F1B24A] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-xs uppercase font-bold tracking-widest text-[#9DC88D]">
+            Authenticating Console Security...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // RENDER: EXECUTIVE LOCK SCREEN (LOCKED)
+  // ---------------------------------------------------------------------------
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#164A41] text-white flex flex-col font-sans antialiased">
+        {/* NAV HEADER */}
+        <header className="bg-[#0F352E] border-b-2 border-[#F1B24A] py-3.5 px-6 shadow-md">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-3">
+              <img
+                src="/urivalent_logo.jfif"
+                alt="Urivalent Logo"
+                className="h-9 w-auto object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "http://localhost:8000/assets/urivalent_logo.jfif";
+                }}
+              />
+              <span className="text-xs font-bold tracking-widest uppercase text-[#9DC88D] border-l border-[#9DC88D]/40 pl-3">
+                Security Enclave
+              </span>
+            </Link>
+            <Link
+              href="/"
+              className="text-xs text-[#9DC88D] hover:text-white uppercase font-bold tracking-wider transition"
+            >
+              &larr; Return to Public Feed
+            </Link>
+          </div>
+        </header>
+
+        {/* LOCK SCREEN BODY */}
+        <main className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="max-w-md w-full bg-white text-[#164A41] rounded-2xl shadow-2xl border-t-8 border-[#F1B24A] p-8 sm:p-10 relative overflow-hidden">
+            {/* Top Security Banner */}
+            <div className="text-center space-y-3 pb-6 border-b border-[#9DC88D]/30">
+              <div className="h-16 w-16 bg-[#F8FAF8] border-2 border-[#F1B24A] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8 text-[#F1B24A]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+              </div>
+
+              <div>
+                <h1 className="text-lg font-black tracking-widest uppercase text-[#164A41]">
+                  Operations Vault
+                </h1>
+                <p className="text-xs text-[#4D774E] font-medium tracking-wide mt-0.5">
+                  Restricted Administrator Enclave &bull; Pipeline Controller
+                </p>
+              </div>
+
+              <div className="inline-block bg-[#164A41]/5 border border-[#164A41]/15 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider text-[#164A41]">
+                Protected by JWT + Secrets Protocol
+              </div>
+            </div>
+
+            {/* Error Notification */}
+            {loginError && (
+              <div className="mt-6 bg-red-50 border-l-4 border-red-600 p-3.5 rounded text-xs text-red-900 flex items-start gap-2.5">
+                <span className="font-bold text-red-600">✕</span>
+                <span className="leading-relaxed">{loginError}</span>
+              </div>
+            )}
+
+            {/* Unlock Form */}
+            <form onSubmit={handleUnlock} className="mt-6 space-y-5">
+              <div>
+                <label
+                  htmlFor="admin_user"
+                  className="block text-xs font-bold uppercase tracking-wider text-[#164A41] mb-1.5"
+                >
+                  Administrator Username
+                </label>
+                <input
+                  type="text"
+                  id="admin_user"
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  required
+                  autoComplete="username"
+                  placeholder="admin"
+                  className="w-full px-4 py-2.5 rounded-lg border-2 border-[#9DC88D] text-[#164A41] font-medium focus:border-[#F1B24A] focus:outline-none transition text-sm bg-[#F8FAF8]"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="admin_pass"
+                    className="block text-xs font-bold uppercase tracking-wider text-[#164A41]"
+                  >
+                    Security Passcode
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasscode(!showPasscode)}
+                    className="text-[11px] text-[#4D774E] hover:text-[#164A41] font-semibold transition"
+                  >
+                    {showPasscode ? "Hide" : "Reveal"}
+                  </button>
+                </div>
+                <input
+                  type={showPasscode ? "text" : "password"}
+                  id="admin_pass"
+                  value={loginPasscode}
+                  onChange={(e) => setLoginPasscode(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  placeholder="••••••••••••"
+                  className="w-full px-4 py-2.5 rounded-lg border-2 border-[#9DC88D] text-[#164A41] font-medium focus:border-[#F1B24A] focus:outline-none transition text-sm bg-[#F8FAF8] font-mono"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full bg-[#F1B24A] hover:bg-[#F1B24A]/90 disabled:opacity-50 text-[#164A41] font-black uppercase tracking-wider py-3 rounded-lg shadow-md hover:shadow-lg transition text-xs flex items-center justify-center gap-2"
+                >
+                  {loginLoading ? (
+                    <>
+                      <span className="h-4 w-4 border-2 border-[#164A41] border-r-transparent rounded-full animate-spin"></span>
+                      <span>Verifying Passcode...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Unlock Operations Console</span>
+                      <span>&rarr;</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-6 pt-5 border-t border-gray-100 text-center">
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                Credentials configured in <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[10px]">.env</code>{" "}
+                (<code className="font-mono text-[10px]">ADMIN_USERNAME</code> &amp; <code className="font-mono text-[10px]">ADMIN_PASSWORD</code>).
+              </p>
+            </div>
+          </div>
+        </main>
+
+        <footer className="bg-[#0F352E] border-t border-[#9DC88D]/30 py-3.5 px-6 text-center text-xs text-[#9DC88D]/70">
+          Urivalent Enclave &bull; Constant-Time Digest Verification &bull; Signed HS256 JWT
+        </footer>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // RENDER: UNLOCKED ADMIN OPERATIONS DASHBOARD
+  // ---------------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-[#164A41] text-white flex flex-col font-sans antialiased">
       {/* HEADER */}
-      <header className="bg-[#0F352E] border-b-2 border-[#F1B24A] shadow-lg py-4 px-6">
+      <header className="bg-[#0F352E] border-b-2 border-[#F1B24A] shadow-lg py-4 px-6 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center">
@@ -177,23 +494,27 @@ export default function AdminPortal() {
                 Operations Command
               </h1>
               <div className="text-[10px] text-[#9DC88D] tracking-wider uppercase font-mono">
-                Pipeline Control & Test Dispatch
+                Pipeline Control &bull; Authenticated Console
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <Link href="/" className="text-[#9DC88D] hover:text-white transition uppercase tracking-wider">
-              &larr; Public Feed
-            </Link>
-            <a
-              href="http://localhost:8000/preview-brief"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[#F1B24A] hover:underline uppercase tracking-wider"
+          <div className="flex items-center gap-3 text-xs font-semibold">
+            {/* Authenticated Admin Pill */}
+            <div className="bg-[#164A41] border border-[#9DC88D] text-[#9DC88D] px-3 py-1 rounded-full flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+              <span className="font-mono uppercase font-bold text-[11px] text-white">
+                {adminUser || "ADMIN"}
+              </span>
+            </div>
+
+            <Link
+              href="/"
+              className="text-[#9DC88D] hover:text-white transition uppercase tracking-wider px-2"
             >
-              Email HTML
-            </a>
+              Feed
+            </Link>
+
             <a
               href="http://localhost:8000/health"
               target="_blank"
@@ -202,6 +523,14 @@ export default function AdminPortal() {
             >
               /health
             </a>
+
+            {/* Lock Console / Sign Out Button */}
+            <button
+              onClick={handleLock}
+              className="bg-[#F1B24A] hover:bg-[#F1B24A]/90 text-[#164A41] font-black uppercase tracking-wider px-3.5 py-1 rounded transition shadow-sm flex items-center gap-1.5"
+            >
+              <span>🔒 Lock</span>
+            </button>
           </div>
         </div>
       </header>
@@ -231,30 +560,6 @@ export default function AdminPortal() {
             </button>
           </div>
         )}
-
-        {/* SECURITY & ADMIN KEY INPUT */}
-        <div className="bg-[#0F352E] border border-[#9DC88D]/40 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🔐</span>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-[#F1B24A]">
-                Admin Authorization Token
-              </div>
-              <div className="text-[11px] text-[#9DC88D]">
-                Passed via X-Admin-Key header for sensitive operational triggers.
-              </div>
-            </div>
-          </div>
-          <div className="w-full sm:w-80">
-            <input
-              type="password"
-              value={adminKey}
-              onChange={(e) => setAdminKey(e.target.value)}
-              placeholder="Enter admin secret key"
-              className="w-full bg-[#164A41] border border-[#9DC88D] px-3 py-1.5 rounded text-xs text-white focus:border-[#F1B24A] focus:outline-none font-mono"
-            />
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* LEFT 2 COLUMNS: CONTROL PANELS */}
@@ -286,7 +591,7 @@ export default function AdminPortal() {
                     value={testEmail}
                     onChange={(e) => setTestEmail(e.target.value)}
                     required
-                    placeholder="gathamwangi45@gmail.com"
+                    placeholder="gathuamwangi45@gmail.com"
                     className="w-full px-4 py-2.5 rounded-lg border-2 border-[#9DC88D] text-[#164A41] font-medium focus:border-[#F1B24A] focus:outline-none transition text-sm bg-[#F8FAF8]"
                   />
                   <p className="text-[11px] text-gray-500 mt-1.5">
@@ -323,7 +628,7 @@ export default function AdminPortal() {
                   Manual Execution Triggers
                 </h2>
                 <p className="text-xs text-[#4D774E] mt-0.5">
-                  Execute individual pipeline tasks on demand outside the scheduled cron jobs.
+                  Execute individual pipeline tasks on demand outside the scheduled cron jobs. Gated by administrator JWT token.
                 </p>
               </div>
 
@@ -332,7 +637,7 @@ export default function AdminPortal() {
                 <div className="border border-[#9DC88D] rounded-lg p-5 flex flex-col justify-between bg-[#F8FAF8]">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#4D774E] bg-[#9DC88D]/20 px-2 py-0.5 rounded">
-                      Scrape & Cluster Only
+                      Scrape &amp; Cluster Only
                     </span>
                     <h3 className="text-sm font-bold text-[#164A41] mt-2 mb-1">
                       Run News Ingestion Cycle
