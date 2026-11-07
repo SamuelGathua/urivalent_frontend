@@ -134,7 +134,7 @@ export default function AdminPortal() {
         setLoginPasscode("");
         fetchHealth();
       } else {
-        setLoginError(data.detail || "Authentication rejected: Invalid administrator username or passcode.");
+        setLoginError(data.detail || "Authentication rejected: Invalid administrator username or passcode. You can set them in urivalent_backend/.env (ADMIN_USERNAME & ADMIN_PASSWORD).");
       }
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
