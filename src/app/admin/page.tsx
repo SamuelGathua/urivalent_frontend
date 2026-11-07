@@ -27,6 +27,8 @@ interface SystemHealth {
   };
 }
 
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+
 export default function AdminPortal() {
   // Authentication & Lock State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -61,7 +63,7 @@ export default function AdminPortal() {
       }
 
       try {
-        const res = await fetch("http://localhost:8000/admin/verify", {
+        const res = await fetch(`${API_BASE_URL}/admin/verify`, {
           headers: {
             Authorization: `Bearer ${savedToken}`,
           },
@@ -93,7 +95,7 @@ export default function AdminPortal() {
   // 2. Fetch live system health
   async function fetchHealth() {
     try {
-      const res = await fetch("http://localhost:8000/health");
+      const res = await fetch(`${API_BASE_URL}/health`);
       if (res.ok) {
         const json = await res.json();
         setHealth(json);
@@ -110,7 +112,7 @@ export default function AdminPortal() {
     setLoginLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/admin/login", {
+      const res = await fetch(`${API_BASE_URL}/admin/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -147,7 +149,7 @@ export default function AdminPortal() {
   // 4. Lock Admin Console (Logout)
   async function handleLock() {
     try {
-      await fetch("http://localhost:8000/admin/logout", { method: "POST" });
+      await fetch(`${API_BASE_URL}/admin/logout`, { method: "POST" });
     } catch {
       // Ignore network errors on logout
     }
@@ -183,7 +185,7 @@ export default function AdminPortal() {
     setMessage(null);
 
     try {
-      const res = await fetch("http://localhost:8000/admin/test-email", {
+      const res = await fetch(`${API_BASE_URL}/admin/test-email`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ email: testEmail }),
@@ -221,7 +223,7 @@ export default function AdminPortal() {
     setMessage(null);
 
     try {
-      const res = await fetch("http://localhost:8000/admin/force-news", {
+      const res = await fetch(`${API_BASE_URL}/admin/force-news`, {
         method: "POST",
         headers: getAuthHeaders(),
       });
@@ -262,7 +264,7 @@ export default function AdminPortal() {
     setMessage(null);
 
     try {
-      const res = await fetch("http://localhost:8000/admin/send-morning-brief", {
+      const res = await fetch(`${API_BASE_URL}/admin/send-morning-brief`, {
         method: "POST",
         headers: getAuthHeaders(),
       });
@@ -324,7 +326,7 @@ export default function AdminPortal() {
                 alt="Urivalent Logo"
                 className="h-9 w-auto object-contain"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "http://localhost:8000/assets/urivalent_logo.jfif";
+                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.jfif`;
                 }}
               />
               <span className="text-xs font-bold tracking-widest uppercase text-[#9DC88D] border-l border-[#9DC88D]/40 pl-3">
@@ -485,7 +487,7 @@ export default function AdminPortal() {
                 alt="Urivalent Logo"
                 className="h-10 w-auto object-contain"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "http://localhost:8000/assets/urivalent_logo.jfif";
+                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.jfif`;
                 }}
               />
             </Link>
@@ -516,7 +518,7 @@ export default function AdminPortal() {
             </Link>
 
             <a
-              href="http://localhost:8000/health"
+              href={`${API_BASE_URL}/health`}
               target="_blank"
               rel="noreferrer"
               className="bg-[#164A41] border border-[#9DC88D] text-white px-2.5 py-1 rounded hover:bg-[#4D774E] transition font-mono"

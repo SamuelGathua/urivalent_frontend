@@ -65,6 +65,8 @@ interface FeedData {
   trending_papers: PaperSnapshot[];
 }
 
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+
 export default function PublicDashboard() {
   const [data, setData] = useState<FeedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -74,7 +76,7 @@ export default function PublicDashboard() {
     async function loadFeed() {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:8000/api/feed", {
+        const res = await fetch(`${API_BASE_URL}/api/feed`, {
           cache: "no-store",
         });
         if (!res.ok) {
@@ -86,13 +88,83 @@ export default function PublicDashboard() {
       } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         console.error("Failed to load feed:", err);
-        setError(`Unable to connect to intelligence API (${errorMsg}). Please ensure FastAPI is running on port 8000.`);
+        setError(`Unable to connect to intelligence API (${errorMsg}). Please ensure the FastAPI backend is running.`);
       } finally {
         setLoading(false);
       }
     }
     loadFeed();
   }, []);
+
+  // Simple loading state to prevent hanging on Edge Runtime
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white text-[#164A41] flex flex-col font-sans antialiased">
+        <header className="bg-[#164A41] border-b-4 border-[#F1B24A] shadow-md sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link href="/" className="flex items-center">
+                <img
+                  src="/urivalent_logo.jfif"
+                  alt="Urivalent Logo"
+                  className="h-10 w-auto object-contain"
+                />
+              </Link>
+              <span className="text-xs font-bold tracking-widest uppercase text-[#9DC88D] border-l border-[#9DC88D]/40 pl-3">
+                Frontier AI Intelligence
+              </span>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center space-y-4">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#F1B24A] border-r-transparent"></div>
+            <div className="text-sm font-bold uppercase tracking-widest text-[#164A41]">
+              Loading Intelligence Feed...
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Graceful error state if API is unreachable
+  if (error && !data) {
+    return (
+      <div className="min-h-screen bg-white text-[#164A41] flex flex-col font-sans antialiased">
+        <header className="bg-[#164A41] border-b-4 border-[#F1B24A] shadow-md sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link href="/" className="flex items-center">
+                <img
+                  src="/urivalent_logo.jfif"
+                  alt="Urivalent Logo"
+                  className="h-10 w-auto object-contain"
+                />
+              </Link>
+              <span className="text-xs font-bold tracking-widest uppercase text-[#9DC88D] border-l border-[#9DC88D]/40 pl-3">
+                Frontier AI Intelligence
+              </span>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center p-8">
+          <div className="max-w-md w-full bg-[#F8FAF8] border border-red-300 rounded-xl p-6 text-center space-y-4 shadow-sm">
+            <div className="text-red-600 font-bold text-sm uppercase tracking-wider">
+              Unable to Connect to Intelligence API
+            </div>
+            <p className="text-xs text-gray-600 leading-relaxed">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-[#164A41] hover:bg-[#0F352E] text-white text-xs uppercase font-bold px-4 py-2 rounded shadow transition"
+            >
+              Retry Connection
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-[#164A41] flex flex-col font-sans antialiased">
@@ -106,7 +178,7 @@ export default function PublicDashboard() {
                 alt="Urivalent Logo"
                 className="h-10 w-auto object-contain"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "http://localhost:8000/assets/urivalent_logo.jfif";
+                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.jfif`;
                 }}
               />
             </Link>
@@ -120,7 +192,7 @@ export default function PublicDashboard() {
               {data?.metadata.formatted_date || "Live Feed"}
             </span>
             <a
-              href="http://localhost:8000/preview-brief"
+              href={`${API_BASE_URL}/preview-brief`}
               target="_blank"
               rel="noreferrer"
               className="text-white hover:text-[#F1B24A] transition font-semibold"
