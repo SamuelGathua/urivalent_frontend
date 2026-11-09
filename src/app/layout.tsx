@@ -9,8 +9,33 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Urivalent | AI Intelligence Feed",
-  description: "Autonomous zero-cost full-stack AI intelligence pipeline and delivery engine.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://urivalent.tech"
+  ),
+  title: "Urivalent | The Edge of Tomorrow",
+  description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy, geopolitical and infrastructure shifts shaping our future.",
+  openGraph: {
+    title: "Urivalent | The Edge of Tomorrow",
+    description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy, geopolitical and infrastructure shifts shaping our future.",
+    url: "https://urivalent.tech",
+    siteName: "Urivalent",
+    images: [
+      {
+        url: "/twitter-image.jpg",
+        width: 1356,
+        height: 614,
+        alt: "Urivalent | The Edge of Tomorrow",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Urivalent | The Edge of Tomorrow",
+    description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy, geopolitical and infrastructure shifts shaping our future.",
+    images: ["/twitter-image.jpg"],
+  },
   icons: {
     icon: "/favicon.png",
   },
