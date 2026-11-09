@@ -7,7 +7,7 @@
   --color-gold: #F1B24A;
   --color-offwhite: #F8FAF8;
   --color-deepforest: #0F352E;
-  --font-family-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-family-serif: var(--font-playfair), 'Playfair Display', Georgia, 'Times New Roman', serif;
 }
 
 :root {
