@@ -13,10 +13,10 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://urivalent.tech"
   ),
   title: "Urivalent | The Edge of Tomorrow",
-  description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy, geopolitical and infrastructure shifts shaping our future.",
+  description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy and infrastructure shifts shaping our future.",
   openGraph: {
     title: "Urivalent | The Edge of Tomorrow",
-    description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy, geopolitical and infrastructure shifts shaping our future.",
+    description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy and infrastructure shifts shaping our future.",
     url: "https://urivalent.tech",
     siteName: "Urivalent",
     images: [
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Urivalent | The Edge of Tomorrow",
-    description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy, geopolitical and infrastructure shifts shaping our future.",
+    description: "The definitive intelligence feed for the AI era. Autonomously tracking frontier models, silicon architectures, agentic tooling, bio-intelligence, and the capital, policy and infrastructure shifts shaping our future.",
     images: ["/twitter-image.jpg"],
   },
   icons: {

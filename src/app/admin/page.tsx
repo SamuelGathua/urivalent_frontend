@@ -322,11 +322,11 @@ export default function AdminPortal() {
           <div className="max-w-5xl mx-auto flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <img
-                src="/urivalent_logo.jfif"
+                src="/urivalent_logo.png"
                 alt="Urivalent Logo"
                 className="h-9 w-auto object-contain"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.jfif`;
+                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.png`;
                 }}
               />
               <span className="text-xs font-bold tracking-widest uppercase text-[#9DC88D] border-l border-[#9DC88D]/40 pl-3">
@@ -482,11 +482,11 @@ export default function AdminPortal() {
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center">
               <img
-                src="/urivalent_logo.jfif"
+                src="/urivalent_logo.png"
                 alt="Urivalent Logo"
                 className="h-10 w-auto object-contain"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.jfif`;
+                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.png`;
                 }}
               />
             </Link>
