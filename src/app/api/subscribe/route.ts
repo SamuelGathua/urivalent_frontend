@@ -4,6 +4,8 @@ import xss from 'xss';
 import { ratelimit } from '@/lib/ratelimit';
 import { db } from '@/lib/db';
 
+export const runtime = 'edge';
+
 // 1. Structural Validation: RFC standard max length is 254
 const subscribeSchema = z.object({
   email: z

@@ -1,14 +1,15 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-const hasRedisEnv =
-  Boolean(process.env.UPSTASH_REDIS_REST_URL) &&
-  Boolean(process.env.UPSTASH_REDIS_REST_TOKEN);
+const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+
+const hasRedisEnv = Boolean(url) && Boolean(token);
 
 // Strict Limit: 3 requests per 48 hours
 export const ratelimit = hasRedisEnv
   ? new Ratelimit({
-      redis: Redis.fromEnv(),
+      redis: new Redis({ url, token }),
       limiter: Ratelimit.slidingWindow(3, "48 h"),
       analytics: true,
     })
@@ -21,4 +22,3 @@ export const ratelimit = hasRedisEnv
         pending: Promise.resolve(),
       }),
     };
-

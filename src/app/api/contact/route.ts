@@ -3,6 +3,8 @@ import { Resend } from 'resend';
 import xss from 'xss';
 import { ratelimit } from '@/lib/ratelimit';
 
+export const runtime = 'edge';
+
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
