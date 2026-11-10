@@ -72,10 +72,10 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, data }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Contact pipeline exception:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to send email' },
+      { error: error instanceof Error ? error.message : 'Failed to send email' },
       { status: 500 }
     );
   }

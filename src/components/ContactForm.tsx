@@ -50,9 +50,13 @@ export default function ContactForm() {
       }
 
       setStatus('success');
-    } catch (err: any) {
+    } catch (err) {
       setStatus('error');
-      setErrorMessage(err?.message || 'Network error occurred. Please try again.');
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : 'Network error occurred. Please try again.'
+      );
     }
   };
 

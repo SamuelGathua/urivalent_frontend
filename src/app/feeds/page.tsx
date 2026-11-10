@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import SubscribeForm from "@/components/SubscribeForm";
@@ -163,6 +163,8 @@ export default function PublicDashboard() {
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [navVisible, setNavVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isHeroIdle, setIsHeroIdle] = useState(false);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Smooth floating navbar hide/show on scroll
   useEffect(() => {
@@ -181,6 +183,47 @@ export default function PublicDashboard() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+  // Cinematic 5-Second Inactivity Fade on Hero Section (as done in landing page)
+  useEffect(() => {
+    const resetIdleTimer = () => {
+      setIsHeroIdle(false);
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+      }
+      if (typeof window !== "undefined" && window.scrollY < window.innerHeight * 0.5) {
+        idleTimerRef.current = setTimeout(() => {
+          if (window.scrollY < window.innerHeight * 0.5) {
+            setIsHeroIdle(true);
+          }
+        }, 5000);
+      }
+    };
+
+    resetIdleTimer();
+
+    const activityEvents = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "touchstart",
+      "touchmove",
+      "scroll",
+    ];
+
+    activityEvents.forEach((ev) =>
+      window.addEventListener(ev, resetIdleTimer, { passive: true })
+    );
+
+    return () => {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+      }
+      activityEvents.forEach((ev) =>
+        window.removeEventListener(ev, resetIdleTimer)
+      );
+    };
+  }, []);
 
   useEffect(() => {
     async function loadFeed() {
@@ -413,7 +456,7 @@ export default function PublicDashboard() {
       {/* ================================================================== */}
       <header
         className={`fixed top-4 sm:top-5 left-0 right-0 z-50 px-4 sm:px-8 transition-all duration-700 ease-out ${
-          navVisible
+          navVisible && !isHeroIdle
             ? "translate-y-0 opacity-100"
             : "-translate-y-24 opacity-0 pointer-events-none"
         }`}
@@ -467,10 +510,10 @@ export default function PublicDashboard() {
       {/* 1. CINEMATIC HERO SECTION                                          */}
       {/* ================================================================== */}
       <section className="relative min-h-[440px] sm:min-h-[500px] lg:min-h-[540px] flex flex-col justify-center pt-24 sm:pt-28 pb-10 sm:pb-12 overflow-hidden">
-        {/* Full-width Background Image: landing_page.jpg */}
+        {/* Full-width Background Image: feeds_page.jpg */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/feeds_landing_page.jpg"
+            src="/feeds_page.jpg"
             alt="Frontier Intelligence Vision"
             fill
             sizes="100vw"
@@ -478,19 +521,13 @@ export default function PublicDashboard() {
             priority
             quality={85}
           />
+          {/* Very small, subtle dark gradient for depth and text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/15 to-transparent pointer-events-none" />
         </div>
 
         {/* Hero Content Container — Moved higher & centered */}
         <div className="relative z-10 max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto">
           <div className="max-w-2xl lg:max-w-3xl">
-            {/* Cycle Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-xs font-mono text-white mb-3 sm:mb-4 shadow-sm">
-              <span className="text-white/70">CYCLE:</span>
-              <span className="font-bold text-[#F1B24A] uppercase">
-                {data?.metadata.formatted_date || "Live Cycle"}
-              </span>
-            </div>
-
             {/* Main Headline */}
             <h1
               className="text-3xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-white mb-3 sm:mb-4 leading-[1.05] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
@@ -499,9 +536,11 @@ export default function PublicDashboard() {
               The Intelligence Feed<span className="text-[#F1B24A]">.</span>
             </h1>
 
-            {/* Subtitle in theme mint color (#7CE5B4) for vibrant contrast and sky synergy */}
+            {/* Subtitle broken into 3 lines in theme mint color (#7CE5B4) */}
             <p className="text-base sm:text-xl lg:text-2xl text-[#7CE5B4] font-light leading-relaxed tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-              Autonomously tracking frontier models, silicon architecture, sovereign compute infrastructure, agent tooling, and capital markets.
+              Autonomously tracking frontier models, silicon architecture,<br />
+              sovereign compute infrastructure, agent tooling,<br />
+              and capital markets.
             </p>
           </div>
         </div>

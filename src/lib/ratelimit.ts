@@ -13,7 +13,7 @@ export const ratelimit = hasRedisEnv
       analytics: true,
     })
   : {
-      limit: async (_identifier: string) => ({
+      limit: async () => ({
         success: true,
         limit: 3,
         remaining: 3,
