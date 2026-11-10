@@ -2,6 +2,30 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { z } from 'zod';
+
+// 1. Define the exact same list of common typos to block
+const BLOCKED_DOMAINS = [
+  'gmail.co', 'gamil.com', 'gmai.com', 'gmail.com.co',
+  'yahoo.cm', 'yaho.com', 'yahoo.co',
+  'hotmail.co', 'hotmal.com',
+  'outlook.co'
+];
+
+// 2. Exact same subscribeSchema as the backend
+const subscribeSchema = z.object({
+  email: z.string()
+    .trim()
+    .toLowerCase()
+    .email({ message: "Invalid email address format" })
+    .max(254)
+    .refine((email) => {
+      const domain = email.split('@')[1];
+      return !BLOCKED_DOMAINS.includes(domain);
+    }, { 
+      message: "Check your email domain for typos (e.g., .co instead of .com)" 
+    }),
+});
 
 interface SubscribeFormProps {
   className?: string;
@@ -9,15 +33,44 @@ interface SubscribeFormProps {
 
 export default function SubscribeForm({ className = "" }: SubscribeFormProps) {
   const [email, setEmail] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'rate_limited'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Real-time onBlur validation (Apple-style instant feedback)
+  const handleBlur = () => {
+    if (!email.trim()) {
+      setError(null);
+      return;
+    }
+    const result = subscribeSchema.safeParse({ email });
+    if (!result.success) {
+      setError(result.error.issues[0]?.message || 'Invalid email address format');
+    } else {
+      setError(null);
+    }
+  };
+
+  // Real-time onChange: instantly clear error so red warning disappears as user types
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (error) setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
+    // Frontend validation pre-check
+    const validation = subscribeSchema.safeParse({ email });
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message || 'Invalid email address format');
+      return;
+    }
+
     setStatus('loading');
     setErrorMessage('');
+    setError(null);
 
     try {
       const res = await fetch('/api/subscribe', {
@@ -36,7 +89,9 @@ export default function SubscribeForm({ className = "" }: SubscribeFormProps) {
 
       if (!res.ok) {
         setStatus('error');
-        setErrorMessage(data.error || 'Unable to complete subscription. Please check your email.');
+        const msg = data.error || 'Unable to complete subscription. Please check your email.';
+        setErrorMessage(msg);
+        setError(msg);
         return;
       }
 
@@ -52,28 +107,29 @@ export default function SubscribeForm({ className = "" }: SubscribeFormProps) {
   };
 
   return (
-    <div className={`bg-white/50 backdrop-blur-xl border border-gray-200/50 rounded-[1.75rem] p-3 sm:p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full ${className}`}>
+    <div
+      className={`bg-[#7E9387]/35 sm:bg-[#7E9387]/40 backdrop-blur-xl border border-white/30 p-2 sm:p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.15)] w-full transition-all duration-300 ${
+        error ? 'rounded-2xl sm:rounded-[1.75rem]' : 'rounded-full'
+      } ${className}`}
+    >
       <AnimatePresence mode="wait">
         {status === 'success' ? (
           <motion.div
             key="success"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="text-center py-6"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="flex items-center justify-center gap-2.5 py-2 px-4 text-center"
           >
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 tracking-tight font-sans">
-              Subscription confirmed.
-            </h3>
-            <p className="text-sm text-gray-500 mt-2 font-sans">
-              You are on the intelligence wire. Expect sovereign AI and silicon dispatch briefings.
-            </p>
+            <span className="text-xs sm:text-sm font-medium text-white tracking-tight font-sans">
+              Subscribed to Sovereign Signals. Intelligence wire active.
+            </span>
           </motion.div>
         ) : (
           <motion.form
@@ -81,23 +137,30 @@ export default function SubscribeForm({ className = "" }: SubscribeFormProps) {
             onSubmit={handleSubmit}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-4"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-full flex flex-col"
           >
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your institutional email..."
-                className="w-full bg-white/70 border border-gray-200 rounded-2xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20 transition-all font-sans text-sm placeholder:text-gray-400"
-              />
+            <div className="flex items-center gap-2 sm:gap-2.5 w-full">
+              <div className="flex-1 min-w-0">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="Enter your institutional email..."
+                  className={`w-full rounded-full px-4 sm:px-5 py-2.5 sm:py-3 font-sans text-xs sm:text-sm transition-all focus:outline-none ${
+                    error
+                      ? 'border border-red-500/50 focus:ring-2 focus:ring-red-500/20 text-red-900 bg-red-50/90 placeholder:text-red-400'
+                      : 'border border-transparent bg-[#DDE2E0] text-[#122A22] placeholder:text-[#7A8E85] focus:ring-2 focus:ring-gray-900/20'
+                  }`}
+                />
+              </div>
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="bg-gray-900 text-white rounded-full px-8 py-3 font-medium active:scale-95 transition-transform hover:bg-black font-sans text-sm whitespace-nowrap disabled:opacity-50 flex items-center justify-center"
+                className="bg-[#0C1521] hover:bg-black text-white rounded-full px-5 sm:px-7 py-2.5 sm:py-3 font-medium font-sans text-xs sm:text-sm whitespace-nowrap active:scale-95 transition-all shadow-sm disabled:opacity-50 flex items-center justify-center shrink-0"
               >
                 {status === 'loading' ? (
                   <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -107,28 +170,32 @@ export default function SubscribeForm({ className = "" }: SubscribeFormProps) {
               </button>
             </div>
 
-            {status === 'rate_limited' && (
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-xs text-amber-800 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 text-center font-sans"
-              >
-                {errorMessage}
-              </motion.div>
-            )}
-
-            {status === 'error' && (
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-xs text-rose-700 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-2.5 text-center font-sans"
-              >
-                {errorMessage}
-              </motion.div>
-            )}
+            {/* Apple-style Animated Error Message directly below input */}
+            <AnimatePresence>
+              {error && (
+                <motion.p
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: -10, height: 0 }}
+                  className="text-red-300 text-xs mt-2 ml-2 sm:ml-3 tracking-wide font-sans overflow-hidden"
+                >
+                  {error}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </motion.form>
         )}
       </AnimatePresence>
+
+      {status === 'rate_limited' && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-[11px] text-amber-200 bg-amber-950/60 border border-amber-500/30 rounded-full px-4 py-1.5 mt-2 text-center font-sans"
+        >
+          {errorMessage}
+        </motion.div>
+      )}
     </div>
   );
 }

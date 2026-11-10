@@ -61,26 +61,26 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="bg-white/50 backdrop-blur-xl border border-gray-200/50 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full max-w-xl mx-auto">
+    <div className="bg-[#72877C]/45 backdrop-blur-xl border border-white/20 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-9 shadow-[0_16px_50px_rgba(0,0,0,0.25)] w-full max-w-xl mx-auto">
       <AnimatePresence mode="wait">
         {status === 'success' ? (
           <motion.div
             key="success"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className="text-center py-8"
           >
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 tracking-tight font-sans">
+            <h3 className="text-xl font-semibold text-white tracking-tight font-sans">
               Message received.
             </h3>
-            <p className="text-sm text-gray-500 mt-2 font-sans">
+            <p className="text-sm text-white/70 mt-2 font-sans">
               Thank you for reaching out. Our research dispatch desk will be in touch shortly.
             </p>
           </motion.div>
@@ -92,10 +92,10 @@ export default function ContactForm() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="space-y-4"
+            className="space-y-5"
           >
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wider pl-1">
+            <div>
+              <label className="block text-[11px] font-mono font-bold text-[#A5B9AF] uppercase tracking-[0.18em] mb-2 pl-1">
                 Name
               </label>
               <input
@@ -105,12 +105,12 @@ export default function ContactForm() {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Dr. Alexander Vance"
-                className="w-full bg-white/70 border border-gray-200 rounded-2xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20 transition-all font-sans text-sm placeholder:text-gray-400"
+                className="w-full bg-[#DDE2E0] border border-white/10 rounded-2xl px-5 py-3.5 text-[#122A22] focus:outline-none focus:ring-2 focus:ring-[#F1B24A]/40 transition-all font-sans text-sm placeholder:text-[#889890]"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wider pl-1">
+            <div>
+              <label className="block text-[11px] font-mono font-bold text-[#A5B9AF] uppercase tracking-[0.18em] mb-2 pl-1">
                 Institutional Email
               </label>
               <input
@@ -120,12 +120,12 @@ export default function ContactForm() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="alexander@institute.org"
-                className="w-full bg-white/70 border border-gray-200 rounded-2xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20 transition-all font-sans text-sm placeholder:text-gray-400"
+                className="w-full bg-[#DDE2E0] border border-white/10 rounded-2xl px-5 py-3.5 text-[#122A22] focus:outline-none focus:ring-2 focus:ring-[#F1B24A]/40 transition-all font-sans text-sm placeholder:text-[#889890]"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wider pl-1">
+            <div>
+              <label className="block text-[11px] font-mono font-bold text-[#A5B9AF] uppercase tracking-[0.18em] mb-2 pl-1">
                 Message / Inquiry
               </label>
               <textarea
@@ -135,7 +135,7 @@ export default function ContactForm() {
                 value={formData.message}
                 onChange={handleChange}
                 placeholder="Inquiring about institutional compute telemetry and sovereign model feeds..."
-                className="w-full bg-white/70 border border-gray-200 rounded-2xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/20 transition-all font-sans text-sm placeholder:text-gray-400 resize-none"
+                className="w-full bg-[#DDE2E0] border border-white/10 rounded-2xl px-5 py-3.5 text-[#122A22] focus:outline-none focus:ring-2 focus:ring-[#F1B24A]/40 transition-all font-sans text-sm placeholder:text-[#889890] resize-none"
               />
             </div>
 
@@ -143,7 +143,7 @@ export default function ContactForm() {
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="w-full sm:w-auto bg-gray-900 text-white rounded-full px-8 py-3 font-medium active:scale-95 transition-transform hover:bg-black font-sans text-sm disabled:opacity-50 flex items-center justify-center min-w-[140px]"
+                className="w-full sm:w-auto bg-[#0C1521] hover:bg-black text-white rounded-full px-8 py-3.5 font-medium active:scale-95 transition-all font-sans text-sm shadow-md disabled:opacity-50 flex items-center justify-center min-w-[150px]"
               >
                 {status === 'loading' ? (
                   <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -157,7 +157,7 @@ export default function ContactForm() {
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-xs text-amber-800 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 text-center font-sans"
+                className="text-xs text-amber-200 bg-amber-950/60 border border-amber-500/30 rounded-xl px-4 py-2.5 text-center font-sans"
               >
                 {errorMessage}
               </motion.div>
@@ -167,7 +167,7 @@ export default function ContactForm() {
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-xs text-rose-700 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-2.5 text-center font-sans"
+                className="text-xs text-rose-200 bg-rose-950/60 border border-rose-500/30 rounded-xl px-4 py-2.5 text-center font-sans"
               >
                 {errorMessage}
               </motion.div>

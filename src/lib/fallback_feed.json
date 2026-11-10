@@ -1,0 +1,1821 @@
+{
+  "status": "success",
+  "metadata": {
+    "service": "Urivalent AI Intelligence Pipeline",
+    "timestamp": "2026-11-10T19:25:41.942764+00:00",
+    "formatted_date": "Tuesday, November 10, 2026",
+    "greeting": "Frontier model preprints, data center power agreements, and high-velocity open-source tooling from the past 24 hours.",
+    "logo_url": "https://api.urivalent.tech/assets/urivalent_logo.png",
+    "total_arxiv_count": 9
+  },
+  "market_tickers": [
+    {
+      "symbol": "NVDA",
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "category": "Silicon & Nanotech",
+      "last": 178.67,
+      "close_price": 178.67,
+      "change": -7.97,
+      "daily_change_pct": -4.27,
+      "change_pct": -4.27,
+      "five_day_trend_pct": -13.56,
+      "volume_anomaly": 1,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ANVDA",
+      "yahoo_url": "https://finance.yahoo.com/quote/NVDA/"
+    },
+    {
+      "symbol": "ASML",
+      "ticker": "ASML",
+      "name": "ASML Holding",
+      "category": "Silicon & Nanotech",
+      "last": 1513.25,
+      "close_price": 1513.25,
+      "change": 88.5,
+      "daily_change_pct": 6.21,
+      "change_pct": 6.21,
+      "five_day_trend_pct": -2.51,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AASML",
+      "yahoo_url": "https://finance.yahoo.com/quote/ASML/"
+    },
+    {
+      "symbol": "TSM",
+      "ticker": "TSM",
+      "name": "Taiwan Semiconductor Manufacturing Co.",
+      "category": "Silicon & Nanotech",
+      "last": 388.62,
+      "close_price": 388.62,
+      "change": 13.18,
+      "daily_change_pct": 3.51,
+      "change_pct": 3.51,
+      "five_day_trend_pct": -4.0,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ATSM",
+      "yahoo_url": "https://finance.yahoo.com/quote/TSM/"
+    },
+    {
+      "symbol": "ARM",
+      "ticker": "ARM",
+      "name": "Arm Holdings",
+      "category": "Silicon & Nanotech",
+      "last": 186.3,
+      "close_price": 186.3,
+      "change": 11.68,
+      "daily_change_pct": 6.69,
+      "change_pct": 6.69,
+      "five_day_trend_pct": -8.0,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AARM",
+      "yahoo_url": "https://finance.yahoo.com/quote/ARM/"
+    },
+    {
+      "symbol": "CEG",
+      "ticker": "CEG",
+      "name": "Constellation Energy",
+      "category": "Energy & Infra (including Space & Power)",
+      "last": 276.09,
+      "close_price": 276.09,
+      "change": 26.14,
+      "daily_change_pct": 10.46,
+      "change_pct": 10.46,
+      "five_day_trend_pct": 4.82,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ACEG",
+      "yahoo_url": "https://finance.yahoo.com/quote/CEG/"
+    },
+    {
+      "symbol": "VRT",
+      "ticker": "VRT",
+      "name": "Vertiv",
+      "category": "Energy & Infra (including Space & Power)",
+      "last": 200.47,
+      "close_price": 200.47,
+      "change": 17.61,
+      "daily_change_pct": 9.63,
+      "change_pct": 9.63,
+      "five_day_trend_pct": -15.04,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3AVRT",
+      "yahoo_url": "https://finance.yahoo.com/quote/VRT/"
+    },
+    {
+      "symbol": "SPCX",
+      "ticker": "SPCX",
+      "name": "SpaceX",
+      "category": "Energy & Infra (including Space & Power)",
+      "last": 142.07,
+      "close_price": 142.07,
+      "change": 7.8,
+      "daily_change_pct": 5.81,
+      "change_pct": 5.81,
+      "five_day_trend_pct": 0.54,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ASPCX",
+      "yahoo_url": "https://finance.yahoo.com/quote/SPCX/"
+    },
+    {
+      "symbol": "NEE",
+      "ticker": "NEE",
+      "name": "NextEra Energy",
+      "category": "Energy & Infra (including Space & Power)",
+      "last": 86.86,
+      "close_price": 86.86,
+      "change": -0.09,
+      "daily_change_pct": -0.1,
+      "change_pct": -0.1,
+      "five_day_trend_pct": 3.0,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ANEE",
+      "yahoo_url": "https://finance.yahoo.com/quote/NEE/"
+    },
+    {
+      "symbol": "GOOGL",
+      "ticker": "GOOGL",
+      "name": "Alphabet",
+      "category": "Models & Research (including Autonomous AI)",
+      "last": 288.15,
+      "close_price": 288.15,
+      "change": 3.37,
+      "daily_change_pct": 1.18,
+      "change_pct": 1.18,
+      "five_day_trend_pct": 2.9,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AGOOGL",
+      "yahoo_url": "https://finance.yahoo.com/quote/GOOGL/"
+    },
+    {
+      "symbol": "META",
+      "ticker": "META",
+      "name": "Meta Platforms",
+      "category": "Models & Research (including Autonomous AI)",
+      "last": 641.37,
+      "close_price": 641.37,
+      "change": 31.22,
+      "daily_change_pct": 5.12,
+      "change_pct": 5.12,
+      "five_day_trend_pct": 3.28,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AMETA",
+      "yahoo_url": "https://finance.yahoo.com/quote/META/"
+    },
+    {
+      "symbol": "MSFT",
+      "ticker": "MSFT",
+      "name": "Microsoft",
+      "category": "Models & Research (including Autonomous AI)",
+      "last": 545.18,
+      "close_price": 545.18,
+      "change": 14.57,
+      "daily_change_pct": 2.75,
+      "change_pct": 2.75,
+      "five_day_trend_pct": 4.64,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AMSFT",
+      "yahoo_url": "https://finance.yahoo.com/quote/MSFT/"
+    },
+    {
+      "symbol": "TSLA",
+      "ticker": "TSLA",
+      "name": "Tesla",
+      "category": "Models & Research (including Autonomous AI)",
+      "last": 378.05,
+      "close_price": 378.05,
+      "change": 19.83,
+      "daily_change_pct": 5.54,
+      "change_pct": 5.54,
+      "five_day_trend_pct": -5.13,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ATSLA",
+      "yahoo_url": "https://finance.yahoo.com/quote/TSLA/"
+    },
+    {
+      "symbol": "RXRX",
+      "ticker": "RXRX",
+      "name": "Recursion Pharmaceuticals",
+      "category": "Bio-Intelligence & Medicine",
+      "last": 3.81,
+      "close_price": 3.81,
+      "change": 0.29,
+      "daily_change_pct": 8.24,
+      "change_pct": 8.24,
+      "five_day_trend_pct": 3.53,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ARXRX",
+      "yahoo_url": "https://finance.yahoo.com/quote/RXRX/"
+    },
+    {
+      "symbol": "TEM",
+      "ticker": "TEM",
+      "name": "Tempus AI",
+      "category": "Bio-Intelligence & Medicine",
+      "last": 84.44,
+      "close_price": 84.44,
+      "change": 8.39,
+      "daily_change_pct": 11.03,
+      "change_pct": 11.03,
+      "five_day_trend_pct": 8.53,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ATEM",
+      "yahoo_url": "https://finance.yahoo.com/quote/TEM/"
+    },
+    {
+      "symbol": "SDGR",
+      "ticker": "SDGR",
+      "name": "Schr\u00f6dinger",
+      "category": "Bio-Intelligence & Medicine",
+      "last": 33.39,
+      "close_price": 33.39,
+      "change": 3.57,
+      "daily_change_pct": 11.97,
+      "change_pct": 11.97,
+      "five_day_trend_pct": 22.85,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ASDGR",
+      "yahoo_url": "https://finance.yahoo.com/quote/SDGR/"
+    },
+    {
+      "symbol": "LLY",
+      "ticker": "LLY",
+      "name": "Eli Lilly and Company",
+      "category": "Bio-Intelligence & Medicine",
+      "last": 1411.95,
+      "close_price": 1411.95,
+      "change": 57.95,
+      "daily_change_pct": 4.28,
+      "change_pct": 4.28,
+      "five_day_trend_pct": 0.18,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ALLY",
+      "yahoo_url": "https://finance.yahoo.com/quote/LLY/"
+    },
+    {
+      "symbol": "NOW",
+      "ticker": "NOW",
+      "name": "ServiceNow",
+      "category": "Agents & Tooling (including Embodied Robotics)",
+      "last": 102.76,
+      "close_price": 102.76,
+      "change": 0.79,
+      "daily_change_pct": 0.77,
+      "change_pct": 0.77,
+      "five_day_trend_pct": -5.86,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ANOW",
+      "yahoo_url": "https://finance.yahoo.com/quote/NOW/"
+    },
+    {
+      "symbol": "NET",
+      "ticker": "NET",
+      "name": "Cloudflare",
+      "category": "Agents & Tooling (including Embodied Robotics)",
+      "last": 293.75,
+      "close_price": 293.75,
+      "change": 25.0,
+      "daily_change_pct": 9.3,
+      "change_pct": 9.3,
+      "five_day_trend_pct": 7.36,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ANET",
+      "yahoo_url": "https://finance.yahoo.com/quote/NET/"
+    },
+    {
+      "symbol": "FIGURE",
+      "ticker": "FIGURE",
+      "name": "Figure AI",
+      "category": "Agents & Tooling (including Embodied Robotics)",
+      "last": null,
+      "close_price": 0.0,
+      "change": null,
+      "daily_change_pct": 0.0,
+      "change_pct": null,
+      "is_private": true,
+      "private_note": "$2.6B+ (Private)",
+      "tradingview_url": null,
+      "yahoo_url": "https://www.figure.ai"
+    },
+    {
+      "symbol": "PATH",
+      "ticker": "PATH",
+      "name": "UiPath",
+      "category": "Agents & Tooling (including Embodied Robotics)",
+      "last": 12.98,
+      "close_price": 12.98,
+      "change": -0.02,
+      "daily_change_pct": -0.15,
+      "change_pct": -0.15,
+      "five_day_trend_pct": -1.14,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3APATH",
+      "yahoo_url": "https://finance.yahoo.com/quote/PATH/"
+    },
+    {
+      "symbol": "SFTBY",
+      "ticker": "SFTBY",
+      "name": "SoftBank Group",
+      "category": "Capital & Markets",
+      "last": 11.74,
+      "close_price": 11.74,
+      "change": 0.27,
+      "daily_change_pct": 2.35,
+      "change_pct": 2.35,
+      "five_day_trend_pct": -12.52,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=OTC%3ASFTBY",
+      "yahoo_url": "https://finance.yahoo.com/quote/SFTBY/"
+    },
+    {
+      "symbol": "BX",
+      "ticker": "BX",
+      "name": "Blackstone",
+      "category": "Capital & Markets",
+      "last": 124.05,
+      "close_price": 124.05,
+      "change": 4.55,
+      "daily_change_pct": 3.81,
+      "change_pct": 3.81,
+      "five_day_trend_pct": 4.96,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ABX",
+      "yahoo_url": "https://finance.yahoo.com/quote/BX/"
+    },
+    {
+      "symbol": "COIN",
+      "ticker": "COIN",
+      "name": "Coinbase",
+      "category": "Capital & Markets",
+      "last": 136.1,
+      "close_price": 136.1,
+      "change": 1.34,
+      "daily_change_pct": 0.99,
+      "change_pct": 0.99,
+      "five_day_trend_pct": -6.43,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ACOIN",
+      "yahoo_url": "https://finance.yahoo.com/quote/COIN/"
+    },
+    {
+      "symbol": "PLTR",
+      "ticker": "PLTR",
+      "name": "Palantir",
+      "category": "Policy & Sovereignty (Defense & State Tech)",
+      "last": 169.2,
+      "close_price": 169.2,
+      "change": 8.82,
+      "daily_change_pct": 5.5,
+      "change_pct": 5.5,
+      "five_day_trend_pct": -3.53,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3APLTR",
+      "yahoo_url": "https://finance.yahoo.com/quote/PLTR/"
+    },
+    {
+      "symbol": "BAH",
+      "ticker": "BAH",
+      "name": "Booz Allen Hamilton",
+      "category": "Policy & Sovereignty (Defense & State Tech)",
+      "last": 86.7,
+      "close_price": 86.7,
+      "change": 1.35,
+      "daily_change_pct": 1.58,
+      "change_pct": 1.58,
+      "five_day_trend_pct": -0.37,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ABAH",
+      "yahoo_url": "https://finance.yahoo.com/quote/BAH/"
+    },
+    {
+      "symbol": "ANDURIL",
+      "ticker": "ANDURIL",
+      "name": "Anduril Industries",
+      "category": "Policy & Sovereignty (Defense & State Tech)",
+      "last": null,
+      "close_price": 0.0,
+      "change": null,
+      "daily_change_pct": 0.0,
+      "change_pct": null,
+      "is_private": true,
+      "private_note": "$14B+ (Private)",
+      "tradingview_url": null,
+      "yahoo_url": "https://www.anduril.com"
+    },
+    {
+      "symbol": "LMT",
+      "ticker": "LMT",
+      "name": "Lockheed Martin",
+      "category": "Policy & Sovereignty (Defense & State Tech)",
+      "last": 588.19,
+      "close_price": 588.19,
+      "change": 21.11,
+      "daily_change_pct": 3.72,
+      "change_pct": 3.72,
+      "five_day_trend_pct": -7.95,
+      "volume_anomaly": 0,
+      "is_private": false,
+      "private_note": null,
+      "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ALMT",
+      "yahoo_url": "https://finance.yahoo.com/quote/LMT/"
+    }
+  ],
+  "market_categories": {
+    "Silicon & Nanotech": [
+      {
+        "symbol": "NVDA",
+        "ticker": "NVDA",
+        "name": "NVIDIA",
+        "category": "Silicon & Nanotech",
+        "last": 178.67,
+        "close_price": 178.67,
+        "change": -7.97,
+        "daily_change_pct": -4.27,
+        "change_pct": -4.27,
+        "five_day_trend_pct": -13.56,
+        "volume_anomaly": 1,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ANVDA",
+        "yahoo_url": "https://finance.yahoo.com/quote/NVDA/"
+      },
+      {
+        "symbol": "ASML",
+        "ticker": "ASML",
+        "name": "ASML Holding",
+        "category": "Silicon & Nanotech",
+        "last": 1513.25,
+        "close_price": 1513.25,
+        "change": 88.5,
+        "daily_change_pct": 6.21,
+        "change_pct": 6.21,
+        "five_day_trend_pct": -2.51,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AASML",
+        "yahoo_url": "https://finance.yahoo.com/quote/ASML/"
+      },
+      {
+        "symbol": "TSM",
+        "ticker": "TSM",
+        "name": "Taiwan Semiconductor Manufacturing Co.",
+        "category": "Silicon & Nanotech",
+        "last": 388.62,
+        "close_price": 388.62,
+        "change": 13.18,
+        "daily_change_pct": 3.51,
+        "change_pct": 3.51,
+        "five_day_trend_pct": -4.0,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ATSM",
+        "yahoo_url": "https://finance.yahoo.com/quote/TSM/"
+      },
+      {
+        "symbol": "ARM",
+        "ticker": "ARM",
+        "name": "Arm Holdings",
+        "category": "Silicon & Nanotech",
+        "last": 186.3,
+        "close_price": 186.3,
+        "change": 11.68,
+        "daily_change_pct": 6.69,
+        "change_pct": 6.69,
+        "five_day_trend_pct": -8.0,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AARM",
+        "yahoo_url": "https://finance.yahoo.com/quote/ARM/"
+      }
+    ],
+    "Energy & Infra (including Space & Power)": [
+      {
+        "symbol": "CEG",
+        "ticker": "CEG",
+        "name": "Constellation Energy",
+        "category": "Energy & Infra (including Space & Power)",
+        "last": 276.09,
+        "close_price": 276.09,
+        "change": 26.14,
+        "daily_change_pct": 10.46,
+        "change_pct": 10.46,
+        "five_day_trend_pct": 4.82,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ACEG",
+        "yahoo_url": "https://finance.yahoo.com/quote/CEG/"
+      },
+      {
+        "symbol": "VRT",
+        "ticker": "VRT",
+        "name": "Vertiv",
+        "category": "Energy & Infra (including Space & Power)",
+        "last": 200.47,
+        "close_price": 200.47,
+        "change": 17.61,
+        "daily_change_pct": 9.63,
+        "change_pct": 9.63,
+        "five_day_trend_pct": -15.04,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3AVRT",
+        "yahoo_url": "https://finance.yahoo.com/quote/VRT/"
+      },
+      {
+        "symbol": "SPCX",
+        "ticker": "SPCX",
+        "name": "SpaceX",
+        "category": "Energy & Infra (including Space & Power)",
+        "last": 142.07,
+        "close_price": 142.07,
+        "change": 7.8,
+        "daily_change_pct": 5.81,
+        "change_pct": 5.81,
+        "five_day_trend_pct": 0.54,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ASPCX",
+        "yahoo_url": "https://finance.yahoo.com/quote/SPCX/"
+      },
+      {
+        "symbol": "NEE",
+        "ticker": "NEE",
+        "name": "NextEra Energy",
+        "category": "Energy & Infra (including Space & Power)",
+        "last": 86.86,
+        "close_price": 86.86,
+        "change": -0.09,
+        "daily_change_pct": -0.1,
+        "change_pct": -0.1,
+        "five_day_trend_pct": 3.0,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ANEE",
+        "yahoo_url": "https://finance.yahoo.com/quote/NEE/"
+      }
+    ],
+    "Models & Research (including Autonomous AI)": [
+      {
+        "symbol": "GOOGL",
+        "ticker": "GOOGL",
+        "name": "Alphabet",
+        "category": "Models & Research (including Autonomous AI)",
+        "last": 288.15,
+        "close_price": 288.15,
+        "change": 3.37,
+        "daily_change_pct": 1.18,
+        "change_pct": 1.18,
+        "five_day_trend_pct": 2.9,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AGOOGL",
+        "yahoo_url": "https://finance.yahoo.com/quote/GOOGL/"
+      },
+      {
+        "symbol": "META",
+        "ticker": "META",
+        "name": "Meta Platforms",
+        "category": "Models & Research (including Autonomous AI)",
+        "last": 641.37,
+        "close_price": 641.37,
+        "change": 31.22,
+        "daily_change_pct": 5.12,
+        "change_pct": 5.12,
+        "five_day_trend_pct": 3.28,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AMETA",
+        "yahoo_url": "https://finance.yahoo.com/quote/META/"
+      },
+      {
+        "symbol": "MSFT",
+        "ticker": "MSFT",
+        "name": "Microsoft",
+        "category": "Models & Research (including Autonomous AI)",
+        "last": 545.18,
+        "close_price": 545.18,
+        "change": 14.57,
+        "daily_change_pct": 2.75,
+        "change_pct": 2.75,
+        "five_day_trend_pct": 4.64,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3AMSFT",
+        "yahoo_url": "https://finance.yahoo.com/quote/MSFT/"
+      },
+      {
+        "symbol": "TSLA",
+        "ticker": "TSLA",
+        "name": "Tesla",
+        "category": "Models & Research (including Autonomous AI)",
+        "last": 378.05,
+        "close_price": 378.05,
+        "change": 19.83,
+        "daily_change_pct": 5.54,
+        "change_pct": 5.54,
+        "five_day_trend_pct": -5.13,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ATSLA",
+        "yahoo_url": "https://finance.yahoo.com/quote/TSLA/"
+      }
+    ],
+    "Bio-Intelligence & Medicine": [
+      {
+        "symbol": "RXRX",
+        "ticker": "RXRX",
+        "name": "Recursion Pharmaceuticals",
+        "category": "Bio-Intelligence & Medicine",
+        "last": 3.81,
+        "close_price": 3.81,
+        "change": 0.29,
+        "daily_change_pct": 8.24,
+        "change_pct": 8.24,
+        "five_day_trend_pct": 3.53,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ARXRX",
+        "yahoo_url": "https://finance.yahoo.com/quote/RXRX/"
+      },
+      {
+        "symbol": "TEM",
+        "ticker": "TEM",
+        "name": "Tempus AI",
+        "category": "Bio-Intelligence & Medicine",
+        "last": 84.44,
+        "close_price": 84.44,
+        "change": 8.39,
+        "daily_change_pct": 11.03,
+        "change_pct": 11.03,
+        "five_day_trend_pct": 8.53,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ATEM",
+        "yahoo_url": "https://finance.yahoo.com/quote/TEM/"
+      },
+      {
+        "symbol": "SDGR",
+        "ticker": "SDGR",
+        "name": "Schr\u00f6dinger",
+        "category": "Bio-Intelligence & Medicine",
+        "last": 33.39,
+        "close_price": 33.39,
+        "change": 3.57,
+        "daily_change_pct": 11.97,
+        "change_pct": 11.97,
+        "five_day_trend_pct": 22.85,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ASDGR",
+        "yahoo_url": "https://finance.yahoo.com/quote/SDGR/"
+      },
+      {
+        "symbol": "LLY",
+        "ticker": "LLY",
+        "name": "Eli Lilly and Company",
+        "category": "Bio-Intelligence & Medicine",
+        "last": 1411.95,
+        "close_price": 1411.95,
+        "change": 57.95,
+        "daily_change_pct": 4.28,
+        "change_pct": 4.28,
+        "five_day_trend_pct": 0.18,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ALLY",
+        "yahoo_url": "https://finance.yahoo.com/quote/LLY/"
+      }
+    ],
+    "Agents & Tooling (including Embodied Robotics)": [
+      {
+        "symbol": "NOW",
+        "ticker": "NOW",
+        "name": "ServiceNow",
+        "category": "Agents & Tooling (including Embodied Robotics)",
+        "last": 102.76,
+        "close_price": 102.76,
+        "change": 0.79,
+        "daily_change_pct": 0.77,
+        "change_pct": 0.77,
+        "five_day_trend_pct": -5.86,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ANOW",
+        "yahoo_url": "https://finance.yahoo.com/quote/NOW/"
+      },
+      {
+        "symbol": "NET",
+        "ticker": "NET",
+        "name": "Cloudflare",
+        "category": "Agents & Tooling (including Embodied Robotics)",
+        "last": 293.75,
+        "close_price": 293.75,
+        "change": 25.0,
+        "daily_change_pct": 9.3,
+        "change_pct": 9.3,
+        "five_day_trend_pct": 7.36,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ANET",
+        "yahoo_url": "https://finance.yahoo.com/quote/NET/"
+      },
+      {
+        "symbol": "FIGURE",
+        "ticker": "FIGURE",
+        "name": "Figure AI",
+        "category": "Agents & Tooling (including Embodied Robotics)",
+        "last": null,
+        "close_price": 0.0,
+        "change": null,
+        "daily_change_pct": 0.0,
+        "change_pct": null,
+        "is_private": true,
+        "private_note": "$2.6B+ (Private)",
+        "tradingview_url": null,
+        "yahoo_url": "https://www.figure.ai"
+      },
+      {
+        "symbol": "PATH",
+        "ticker": "PATH",
+        "name": "UiPath",
+        "category": "Agents & Tooling (including Embodied Robotics)",
+        "last": 12.98,
+        "close_price": 12.98,
+        "change": -0.02,
+        "daily_change_pct": -0.15,
+        "change_pct": -0.15,
+        "five_day_trend_pct": -1.14,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3APATH",
+        "yahoo_url": "https://finance.yahoo.com/quote/PATH/"
+      }
+    ],
+    "Capital & Markets": [
+      {
+        "symbol": "SFTBY",
+        "ticker": "SFTBY",
+        "name": "SoftBank Group",
+        "category": "Capital & Markets",
+        "last": 11.74,
+        "close_price": 11.74,
+        "change": 0.27,
+        "daily_change_pct": 2.35,
+        "change_pct": 2.35,
+        "five_day_trend_pct": -12.52,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=OTC%3ASFTBY",
+        "yahoo_url": "https://finance.yahoo.com/quote/SFTBY/"
+      },
+      {
+        "symbol": "BX",
+        "ticker": "BX",
+        "name": "Blackstone",
+        "category": "Capital & Markets",
+        "last": 124.05,
+        "close_price": 124.05,
+        "change": 4.55,
+        "daily_change_pct": 3.81,
+        "change_pct": 3.81,
+        "five_day_trend_pct": 4.96,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ABX",
+        "yahoo_url": "https://finance.yahoo.com/quote/BX/"
+      },
+      {
+        "symbol": "COIN",
+        "ticker": "COIN",
+        "name": "Coinbase",
+        "category": "Capital & Markets",
+        "last": 136.1,
+        "close_price": 136.1,
+        "change": 1.34,
+        "daily_change_pct": 0.99,
+        "change_pct": 0.99,
+        "five_day_trend_pct": -6.43,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3ACOIN",
+        "yahoo_url": "https://finance.yahoo.com/quote/COIN/"
+      }
+    ],
+    "Policy & Sovereignty (Defense & State Tech)": [
+      {
+        "symbol": "PLTR",
+        "ticker": "PLTR",
+        "name": "Palantir",
+        "category": "Policy & Sovereignty (Defense & State Tech)",
+        "last": 169.2,
+        "close_price": 169.2,
+        "change": 8.82,
+        "daily_change_pct": 5.5,
+        "change_pct": 5.5,
+        "five_day_trend_pct": -3.53,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NASDAQ%3APLTR",
+        "yahoo_url": "https://finance.yahoo.com/quote/PLTR/"
+      },
+      {
+        "symbol": "BAH",
+        "ticker": "BAH",
+        "name": "Booz Allen Hamilton",
+        "category": "Policy & Sovereignty (Defense & State Tech)",
+        "last": 86.7,
+        "close_price": 86.7,
+        "change": 1.35,
+        "daily_change_pct": 1.58,
+        "change_pct": 1.58,
+        "five_day_trend_pct": -0.37,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ABAH",
+        "yahoo_url": "https://finance.yahoo.com/quote/BAH/"
+      },
+      {
+        "symbol": "ANDURIL",
+        "ticker": "ANDURIL",
+        "name": "Anduril Industries",
+        "category": "Policy & Sovereignty (Defense & State Tech)",
+        "last": null,
+        "close_price": 0.0,
+        "change": null,
+        "daily_change_pct": 0.0,
+        "change_pct": null,
+        "is_private": true,
+        "private_note": "$14B+ (Private)",
+        "tradingview_url": null,
+        "yahoo_url": "https://www.anduril.com"
+      },
+      {
+        "symbol": "LMT",
+        "ticker": "LMT",
+        "name": "Lockheed Martin",
+        "category": "Policy & Sovereignty (Defense & State Tech)",
+        "last": 588.19,
+        "close_price": 588.19,
+        "change": 21.11,
+        "daily_change_pct": 3.72,
+        "change_pct": 3.72,
+        "five_day_trend_pct": -7.95,
+        "volume_anomaly": 0,
+        "is_private": false,
+        "private_note": null,
+        "tradingview_url": "https://www.tradingview.com/chart/?symbol=NYSE%3ALMT",
+        "yahoo_url": "https://finance.yahoo.com/quote/LMT/"
+      }
+    ]
+  },
+  "tier1_items": [
+    {
+      "id": 73,
+      "cluster_id": "clust_20261110_bb487acb",
+      "pillar_category": "[AGENTS & TOOLING]",
+      "primary_entity": "OpenAI",
+      "headline": "OpenAI unveils Control Room to halt risky model workloads",
+      "what_happened": "OpenAI introduced a centralized Control Room system that can monitor and instantly terminate model jobs flagged for safety or security concerns.",
+      "technical_summary": "Control Room aggregates telemetry from 1,200 compute nodes, applies a Bayesian risk model (threshold\u202fp\u202f<\u202f0.01) and triggers a Kubernetes pod\u2011kill via gRPC within 250\u202fms of detection.",
+      "strategic_implication": "Provides a compliance layer for regulated industries, reducing liability and positioning OpenAI as a responsible AI provider for high\u2011risk deployments.",
+      "hype_vs_substance": "High Substance",
+      "signal_score": 9,
+      "source_urls": "[{\"title\": \"Control Room: A central system to track and stop model workloads across our research infrastructure\", \"link\": \"https://openai.com/index/control-room\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+      "image_url": null,
+      "published_at": "2026-11-09T13:00:00+00:00",
+      "is_dispatched": 0,
+      "parsed_sources": [
+        {
+          "title": "Control Room: A central system to track and stop model workloads across our research infrastructure",
+          "link": "https://openai.com/index/control-room",
+          "source": "OpenAI News",
+          "badge": "LAB"
+        }
+      ]
+    },
+    {
+      "id": 75,
+      "cluster_id": "clust_20261110_c95fa99e",
+      "pillar_category": "[AGENTS & TOOLING]",
+      "primary_entity": "Google DeepMind",
+      "headline": "AlphaProof Code writes 3\u202fM Lean proofs to verify Signal encryption",
+      "what_happened": "DeepMind\u2019s AlphaProof Code agents produced three million lines of formal proofs in Lean to certify the core cryptographic primitives of Signal\u2019s messaging app.",
+      "technical_summary": "AlphaProof combines a transformer\u2011based proof\u2011synthesis model (1.2\u202fB parameters) with a Monte\u2011Carlo tree search over Lean tactics, achieving a 92\u202f% success rate on generated lemmas.",
+      "strategic_implication": "Demonstrates feasibility of large\u2011scale formal verification, opening a market for high\u2011assurance software services and potentially attracting defense and fintech contracts.",
+      "hype_vs_substance": "High Substance",
+      "signal_score": 8,
+      "source_urls": "[{\"title\": \"Introducing AlphaProof Code: a breakthrough in verifying complex software at depth\", \"link\": \"https://deepmind.google/blog/introducing-alphaproof-code/\", \"source\": \"Google DeepMind\", \"badge\": \"LAB\"}]",
+      "image_url": "https://lh3.googleusercontent.com/hn6AiI6lYFo6chi1mL6uJ9nOW9UXfsAKnSyOApiie2urHNU2tmSPUmGn0hNfWyYLRcsWCGjCIrBZSCt1ihZmvW-LDJPfyolsr5w-yvzlknZVzmaH=w528-h297-n-nu-rw-lo",
+      "published_at": "2026-11-10T12:02:28+00:00",
+      "is_dispatched": 0,
+      "parsed_sources": [
+        {
+          "title": "Introducing AlphaProof Code: a breakthrough in verifying complex software at depth",
+          "link": "https://deepmind.google/blog/introducing-alphaproof-code/",
+          "source": "Google DeepMind",
+          "badge": "LAB"
+        }
+      ]
+    },
+    {
+      "id": 72,
+      "cluster_id": "clust_20261110_861ca8cc",
+      "pillar_category": "[AGENTS & TOOLING]",
+      "primary_entity": "OpenAI",
+      "headline": "ChatGPT Enterprise now purchasable via AWS Marketplace",
+      "what_happened": "OpenAI listed its ChatGPT Enterprise tier on AWS Marketplace, enabling corporate buyers to bill the service through existing AWS contracts.",
+      "technical_summary": "Enterprise tier offers 32\u2011core GPT\u20114\u2011Turbo instances, data\u2011at\u2011rest encryption (AES\u2011256), and role\u2011based access control; integration uses AWS Service Catalog APIs for automated provisioning.",
+      "strategic_implication": "Simplifies procurement for large firms, expands OpenAI\u2019s addressable market in the enterprise segment, and deepens the partnership with Amazon\u2019s cloud ecosystem.",
+      "hype_vs_substance": "High Substance",
+      "signal_score": 8,
+      "source_urls": "[{\"title\": \"ChatGPT Enterprise now available in AWS Marketplace\", \"link\": \"https://openai.com/index/chatgpt-enterprise-aws-marketplace\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+      "image_url": null,
+      "published_at": "2026-11-09T19:00:00+00:00",
+      "is_dispatched": 0,
+      "parsed_sources": [
+        {
+          "title": "ChatGPT Enterprise now available in AWS Marketplace",
+          "link": "https://openai.com/index/chatgpt-enterprise-aws-marketplace",
+          "source": "OpenAI News",
+          "badge": "LAB"
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "cluster_id": "clust_20261110_861ca8cc",
+      "pillar_category": "AGENTS & TOOLING",
+      "primary_entity": "OpenAI",
+      "headline": "ChatGPT Enterprise now available in AWS Marketplace",
+      "what_happened": "ChatGPT Enterprise was listed on AWS Marketplace, allowing corporate buyers to procure it via existing AWS contracts.",
+      "technical_summary": "The offering bundles the same GPT\u20114\u2011turbo backend with SSO, audit logging, and VPC\u2011endpoint connectivity, billed through AWS usage reports.",
+      "strategic_implication": "Streamlines enterprise sales, reduces friction for large customers, and leverages AWS\u2019s global reseller network to accelerate revenue growth.",
+      "hype_vs_substance": "High Substance",
+      "signal_score": 8,
+      "source_urls": "[{\"title\": \"ChatGPT Enterprise now available in AWS Marketplace\", \"link\": \"https://openai.com/index/chatgpt-enterprise-aws-marketplace\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+      "image_url": null,
+      "published_at": "2026-11-09T19:00:00+00:00",
+      "is_dispatched": 0,
+      "parsed_sources": [
+        {
+          "title": "ChatGPT Enterprise now available in AWS Marketplace",
+          "link": "https://openai.com/index/chatgpt-enterprise-aws-marketplace",
+          "source": "OpenAI News",
+          "badge": "LAB"
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "cluster_id": "clust_20261110_861ca8cc",
+      "pillar_category": "AGENTS & TOOLING",
+      "primary_entity": "OpenAI",
+      "headline": "ChatGPT Enterprise listed on AWS Marketplace for streamlined corporate procurement",
+      "what_happened": "OpenAI made its ChatGPT Enterprise offering available through the AWS Marketplace, allowing businesses to buy the service via existing AWS billing accounts.",
+      "technical_summary": "The integration wraps the ChatGPT Enterprise API behind AWS Service Catalog, supports SSO via AWS IAM, and adds metered billing hooks that report token usage to AWS Cost Explorer in real time.",
+      "strategic_implication": "Leveraging AWS\u2019s enterprise purchasing ecosystem lowers sales friction, expands OpenAI\u2019s reach into large\u2011scale corporate customers, and creates a recurring revenue stream tied to AWS spend.",
+      "hype_vs_substance": "High Substance",
+      "signal_score": 8,
+      "source_urls": "[{\"title\": \"ChatGPT Enterprise now available in AWS Marketplace\", \"link\": \"https://openai.com/index/chatgpt-enterprise-aws-marketplace\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+      "image_url": null,
+      "published_at": "2026-11-09T19:00:00+00:00",
+      "is_dispatched": 1,
+      "parsed_sources": [
+        {
+          "title": "ChatGPT Enterprise now available in AWS Marketplace",
+          "link": "https://openai.com/index/chatgpt-enterprise-aws-marketplace",
+          "source": "OpenAI News",
+          "badge": "LAB"
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "cluster_id": "clust_20261110_bb487acb",
+      "pillar_category": "MODELS & RESEARCH",
+      "primary_entity": "OpenAI",
+      "headline": "OpenAI Deploys 'Control Room' for Real-Time Workload Safety Interception",
+      "what_happened": "OpenAI introduced 'Control Room,' a central system designed to track model workloads across its research infrastructure and rapidly halt them upon detecting safety or security concerns.",
+      "technical_summary": "The system likely employs real-time telemetry monitoring of inference and training jobs, using heuristic or model-based anomaly detection to trigger automated kill-switches for specific compute nodes or job queues.",
+      "strategic_implication": "Mitigates regulatory and reputational risk by demonstrating operational control over frontier model behavior, a critical requirement for scaling compute resources safely.",
+      "hype_vs_substance": "High Substance",
+      "signal_score": 8,
+      "source_urls": "[{\"title\": \"Control Room: A central system to track and stop model workloads across our research infrastructure\", \"link\": \"https://openai.com/index/control-room\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+      "image_url": null,
+      "published_at": "2026-11-09T13:00:00+00:00",
+      "is_dispatched": 0,
+      "parsed_sources": [
+        {
+          "title": "Control Room: A central system to track and stop model workloads across our research infrastructure",
+          "link": "https://openai.com/index/control-room",
+          "source": "OpenAI News",
+          "badge": "LAB"
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "cluster_id": "clust_20261110_bb487acb",
+      "pillar_category": "AGENTS & TOOLING",
+      "primary_entity": "OpenAI",
+      "headline": "OpenAI unveils Control Room to monitor and abort model workloads across research clusters",
+      "what_happened": "OpenAI introduced a centralized Control Room system that can track active model jobs and instantly terminate them if safety concerns arise.",
+      "technical_summary": "Control Room aggregates telemetry from Kubernetes pods running inference jobs, correlates them with policy rules (e.g., content filters, compute caps), and issues kill signals via the orchestrator\u2019s API; it logs actions to an immutable audit ledger.",
+      "strategic_implication": "The tool mitigates regulatory risk, improves internal safety governance, and reassures partners that OpenAI can enforce rapid shutdowns, strengthening its compliance posture.",
+      "hype_vs_substance": "High Substance",
+      "signal_score": 8,
+      "source_urls": "[{\"title\": \"Control Room: A central system to track and stop model workloads across our research infrastructure\", \"link\": \"https://openai.com/index/control-room\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+      "image_url": null,
+      "published_at": "2026-11-09T13:00:00+00:00",
+      "is_dispatched": 1,
+      "parsed_sources": [
+        {
+          "title": "Control Room: A central system to track and stop model workloads across our research infrastructure",
+          "link": "https://openai.com/index/control-room",
+          "source": "OpenAI News",
+          "badge": "LAB"
+        }
+      ]
+    }
+  ],
+  "pillar_groups": {
+    "[SILICON & NANOTECH]": [
+      {
+        "id": 29,
+        "cluster_id": "clust_20261110_9bd8c4a3",
+        "pillar_category": "[SILICON & NANOTECH]",
+        "primary_entity": "NVIDIA",
+        "headline": "Nvidia cracks down on overseas cloud AI GPU rentals for China",
+        "what_happened": "Nvidia may cap cloud partners\u2019 Chinese business at 49% as Chinese firms buy up more than 1 million gaming and workstation GPUs.",
+        "technical_summary": "Technical deployment centers on optimized [silicon & nanotech] infrastructure and architectural integration.",
+        "strategic_implication": "Signals expanding enterprise demand and defensible supply constraints for NVIDIA within the AI ecosystem.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"Nvidia cracks down on overseas cloud AI GPU rentals for China\", \"link\": \"https://www.tomshardware.com/tech-industry/policy/nvidia-cracks-down-on-overseas-cloud-ai-gpu-rentals-for-china-partners-face-51-percent-non-chinese-quota-as-black-market-b300-rack-prices-surge-to-usd2-8-million\", \"source\": \"Tom's Hardware\", \"badge\": \"RSS\"}]",
+        "image_url": "https://cdn.mos.cms.futurecdn.net/n3JSWEEYTE8ywDfC8rkMiS-1920-80.jpg",
+        "published_at": "2026-11-09T17:48:17+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "Nvidia cracks down on overseas cloud AI GPU rentals for China",
+            "link": "https://www.tomshardware.com/tech-industry/policy/nvidia-cracks-down-on-overseas-cloud-ai-gpu-rentals-for-china-partners-face-51-percent-non-chinese-quota-as-black-market-b300-rack-prices-surge-to-usd2-8-million",
+            "source": "Tom's Hardware",
+            "badge": "RSS"
+          }
+        ]
+      },
+      {
+        "id": 32,
+        "cluster_id": "clust_20261110_f87f19c3",
+        "pillar_category": "[SILICON & NANOTECH]",
+        "primary_entity": "Global AI Frontier",
+        "headline": "The Race to Build a \u201cFind My\u201d for AI Chips",
+        "what_happened": "In a bid to limit China\u2019s AI capabilities, the United States imposed restrictions in 2022 on the export of certain advanced chips to China.",
+        "technical_summary": "But throughout the AI boom those chips have kept turning up in China anyway .",
+        "strategic_implication": "Signals expanding enterprise demand and defensible supply constraints for Global AI Frontier within the AI ecosystem.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"The Race to Build a \\u201cFind My\\u201d for AI Chips\", \"link\": \"https://spectrum.ieee.org/find-my-ai-chip\", \"source\": \"IEEE Spectrum Computing\", \"badge\": \"RSS\"}]",
+        "image_url": "https://spectrum.ieee.org/media-library/conceptual-illustration-of-a-radar-scanning-a-large-computer-chip-with-pieces-of-the-chip-featuring-different-regions-of-the-un.jpg?id=68612492&width=980",
+        "published_at": "2026-11-09T13:00:02+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "The Race to Build a \u201cFind My\u201d for AI Chips",
+            "link": "https://spectrum.ieee.org/find-my-ai-chip",
+            "source": "IEEE Spectrum Computing",
+            "badge": "RSS"
+          }
+        ]
+      }
+    ],
+    "[ENERGY & INFRA]": [
+      {
+        "id": 25,
+        "cluster_id": "clust_20261110_2f75485e",
+        "pillar_category": "[ENERGY & INFRA]",
+        "primary_entity": "Anthropic",
+        "headline": "Wall St brokerages say AI selloff overdone, downplay Democrat regulation risks",
+        "what_happened": "Wall Street brokerages including Morgan Stanley and UBS called last week's rout in the AI trade overdone, arguing that the risks of extreme regulation of data center developments under a Democrat-controlled Congress a...",
+        "technical_summary": "Technical deployment centers on optimized [energy & infra] infrastructure and architectural integration.",
+        "strategic_implication": "Signals expanding enterprise demand and defensible supply constraints for Anthropic within the AI ecosystem.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"Wall St brokerages say AI selloff overdone, downplay Democrat regulation risks\", \"link\": \"https://economictimes.indiatimes.com/tech/artificial-intelligence/wall-st-brokerages-say-ai-selloff-overdone-downplay-democrat-regulation-risks/articleshow/135686988.cms\", \"source\": \"GNews / The Economic Times\", \"badge\": \"NEWS\"}, {\"title\": \"Wall Street brokerages say AI sell-off overdone, downplay Democrat regulation risks\", \"link\": \"https://www.theglobeandmail.com/investing/article-wall-street-brokerages-say-ai-sell-off-overdone-downplay-democrat/\", \"source\": \"GNews / The Globe and Mail\", \"badge\": \"NEWS\"}]",
+        "image_url": "https://img.etimg.com/thumb/width-1200,height-900,imgsize-2646065,resizemode-75,msid-135686988/tech/artificial-intelligence/wall-st-brokerages-say-ai-selloff-overdone-downplay-democrat-regulation-risks.jpg",
+        "published_at": "2026-11-09T15:56:37+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "Wall St brokerages say AI selloff overdone, downplay Democrat regulation risks",
+            "link": "https://economictimes.indiatimes.com/tech/artificial-intelligence/wall-st-brokerages-say-ai-selloff-overdone-downplay-democrat-regulation-risks/articleshow/135686988.cms",
+            "source": "GNews / The Economic Times",
+            "badge": "NEWS"
+          },
+          {
+            "title": "Wall Street brokerages say AI sell-off overdone, downplay Democrat regulation risks",
+            "link": "https://www.theglobeandmail.com/investing/article-wall-street-brokerages-say-ai-sell-off-overdone-downplay-democrat/",
+            "source": "GNews / The Globe and Mail",
+            "badge": "NEWS"
+          }
+        ]
+      }
+    ],
+    "[MODELS & RESEARCH]": [
+      {
+        "id": 27,
+        "cluster_id": "clust_20261110_9d144203",
+        "pillar_category": "[MODELS & RESEARCH]",
+        "primary_entity": "NVIDIA",
+        "headline": "Law firm files class-action lawsuit against Nvidia after CEO Jensen Huang confirms affair with alleged Chinese spy",
+        "what_happened": "Class-action lawsuit and legal investigations against Nvidia over securities fraud start flying",
+        "technical_summary": "Technical deployment centers on optimized [models & research] infrastructure and architectural integration.",
+        "strategic_implication": "Signals expanding enterprise demand and defensible supply constraints for NVIDIA within the AI ecosystem.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"Law firm files class-action lawsuit against Nvidia after CEO Jensen Huang confirms affair with alleged Chinese spy\", \"link\": \"https://www.tomshardware.com/tech-industry/big-tech/law-firm-files-class-action-lawsuit-against-nvidia-after-ceo-jensen-huang-confirms-affair-with-alleged-chinese-spy-more-to-come-as-multiple-other-law-firms-investigate-securities-fraud-following-stock-drop\", \"source\": \"Tom's Hardware\", \"badge\": \"RSS\"}]",
+        "image_url": "https://cdn.mos.cms.futurecdn.net/vmfpT5LqUXTgKosXsbK9nj-1920-80.jpg",
+        "published_at": "2026-11-10T00:03:08+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "Law firm files class-action lawsuit against Nvidia after CEO Jensen Huang confirms affair with alleged Chinese spy",
+            "link": "https://www.tomshardware.com/tech-industry/big-tech/law-firm-files-class-action-lawsuit-against-nvidia-after-ceo-jensen-huang-confirms-affair-with-alleged-chinese-spy-more-to-come-as-multiple-other-law-firms-investigate-securities-fraud-following-stock-drop",
+            "source": "Tom's Hardware",
+            "badge": "RSS"
+          }
+        ]
+      },
+      {
+        "id": 28,
+        "cluster_id": "clust_20261110_49534534",
+        "pillar_category": "[MODELS & RESEARCH]",
+        "primary_entity": "Global AI Frontier",
+        "headline": "Ethereum Foundation sued after firing employee over mandatory 'Source Seppuku' suicide pact",
+        "what_happened": "A former employee of The Ethereum Foundation is suing the nonprofit after being fired for refusing to sign its 'Source Seppuku License.'",
+        "technical_summary": "Technical deployment centers on optimized [models & research] infrastructure and architectural integration.",
+        "strategic_implication": "Signals expanding enterprise demand and defensible supply constraints for Global AI Frontier within the AI ecosystem.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"Ethereum Foundation sued after firing employee over mandatory 'Source Seppuku' suicide pact\", \"link\": \"https://www.tomshardware.com/tech-industry/cryptocurrency/ethereum-foundation-sued-after-firing-employee-over-mandatory-source-seppuku-suicide-pact-crypto-firm-demanded-employees-pledge-to-take-their-own-lives-with-a-sword-to-protect-open-source-code-founder-vitalik-claims-1-000-year-mandate-just-artwork\", \"source\": \"Tom's Hardware\", \"badge\": \"RSS\"}]",
+        "image_url": "https://cdn.mos.cms.futurecdn.net/ErcrV48gKwQM6mLxREMzAK-1920-80.jpg",
+        "published_at": "2026-11-09T18:43:48+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "Ethereum Foundation sued after firing employee over mandatory 'Source Seppuku' suicide pact",
+            "link": "https://www.tomshardware.com/tech-industry/cryptocurrency/ethereum-foundation-sued-after-firing-employee-over-mandatory-source-seppuku-suicide-pact-crypto-firm-demanded-employees-pledge-to-take-their-own-lives-with-a-sword-to-protect-open-source-code-founder-vitalik-claims-1-000-year-mandate-just-artwork",
+            "source": "Tom's Hardware",
+            "badge": "RSS"
+          }
+        ]
+      },
+      {
+        "id": 31,
+        "cluster_id": "clust_20261110_1e29639e",
+        "pillar_category": "[MODELS & RESEARCH]",
+        "primary_entity": "Global AI Frontier",
+        "headline": "AI Agents Are Testing the Limits of Zero-Trust Security",
+        "what_happened": "This article is brought to you by Queen\u2019s University Belfast .",
+        "technical_summary": "Several teams around the globe are leveraging AI by creating a task force of agents managed by an orchestrator and creating applications to support risk assessment, client profiling, match making, and information yield with a slight overview of decision making.",
+        "strategic_implication": "Signals expanding enterprise demand and defensible supply constraints for Global AI Frontier within the AI ecosystem.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"AI Agents Are Testing the Limits of Zero-Trust Security\", \"link\": \"https://spectrum.ieee.org/zero-trust-agentic-ai-architecture\", \"source\": \"IEEE Spectrum Computing\", \"badge\": \"RSS\"}]",
+        "image_url": "https://spectrum.ieee.org/media-library/collage-of-indoor-drone-flight-phone-controls-and-operator-at-computer-workstation.jpg?id=68578379&width=980",
+        "published_at": "2026-11-09T16:25:06+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "AI Agents Are Testing the Limits of Zero-Trust Security",
+            "link": "https://spectrum.ieee.org/zero-trust-agentic-ai-architecture",
+            "source": "IEEE Spectrum Computing",
+            "badge": "RSS"
+          }
+        ]
+      },
+      {
+        "id": 30,
+        "cluster_id": "clust_20261110_adb1af51",
+        "pillar_category": "[MODELS & RESEARCH]",
+        "primary_entity": "NVIDIA",
+        "headline": "Nvidia CEO Jensen Huang summoned to Congress over affair with alleged Chinese spy",
+        "what_happened": "Jensen Huang has been summoned to appear before Congress's Select Committee on the CCP.",
+        "technical_summary": "Technical deployment centers on optimized [models & research] infrastructure and architectural integration.",
+        "strategic_implication": "Signals expanding enterprise demand and defensible supply constraints for NVIDIA within the AI ecosystem.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"Nvidia CEO Jensen Huang summoned to Congress over affair with alleged Chinese spy\", \"link\": \"https://www.tomshardware.com/tech-industry/big-tech/nvidia-ceo-jensen-huang-summoned-to-congressional-committee-over-affair-with-alleged-chinese-spy-says-recent-reports-raise-concerns-over-security-protocols-and-ties-to-chinese-intelligence\", \"source\": \"Tom's Hardware\", \"badge\": \"RSS\"}]",
+        "image_url": "https://cdn.mos.cms.futurecdn.net/t75kmqCZia9XGcHiAKqZ5T-1920-80.jpg",
+        "published_at": "2026-11-09T15:57:13+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "Nvidia CEO Jensen Huang summoned to Congress over affair with alleged Chinese spy",
+            "link": "https://www.tomshardware.com/tech-industry/big-tech/nvidia-ceo-jensen-huang-summoned-to-congressional-committee-over-affair-with-alleged-chinese-spy-says-recent-reports-raise-concerns-over-security-protocols-and-ties-to-chinese-intelligence",
+            "source": "Tom's Hardware",
+            "badge": "RSS"
+          }
+        ]
+      }
+    ],
+    "[AGENTS & TOOLING]": [
+      {
+        "id": 74,
+        "cluster_id": "clust_20261110_8f206d86",
+        "pillar_category": "[AGENTS & TOOLING]",
+        "primary_entity": "OpenAI",
+        "headline": "CodeRabbit boosts software output 20\u2011fold with agentic development",
+        "what_happened": "OpenAI\u2011powered CodeRabbit launched, using GPT\u20114\u2011Turbo to generate, test, and merge code, claiming a 20\u00d7 increase in shipped features per engineer.",
+        "technical_summary": "The system orchestrates a loop of prompt\u2011to\u2011code, unit\u2011test generation, and static analysis; it employs a reinforcement\u2011learning\u2011from\u2011human\u2011feedback (RLHF) reward of +1 per passing test and -0.5 per lint error.",
+        "strategic_implication": "Accelerates product timelines for OpenAI\u2019s enterprise customers, creating a sticky tooling ecosystem that could erode traditional software development outsourcing markets.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"CodeRabbit scales agentic software development and ships 20x more\", \"link\": \"https://openai.com/index/coderabbit-codex-daybreak\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-09T08:00:00+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "CodeRabbit scales agentic software development and ships 20x more",
+            "link": "https://openai.com/index/coderabbit-codex-daybreak",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      }
+    ],
+    "[CAPITAL & MARKETS]": [
+      {
+        "id": 26,
+        "cluster_id": "clust_20261110_8f69cac5",
+        "pillar_category": "[CAPITAL & MARKETS]",
+        "primary_entity": "Meta",
+        "headline": "META surges 5.12% to $641.37 (+5.12% 24h swing)",
+        "what_happened": "META recorded a closing price of $641.37 with a 24-hour move of +5.12% and a 5-day trend of +3.28%.",
+        "technical_summary": "Trading volume hit 19,106,400 shares (normal volume).",
+        "strategic_implication": "Signals expanding enterprise demand and defensible supply constraints for Meta within the AI ecosystem.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"COMPUTE MARKET ALERT: META surges 5.12% to $641.37 (+5.12% 24h swing)\", \"link\": \"https://finance.yahoo.com/quote/META\", \"source\": \"yfinance / META\", \"badge\": \"MARKET\"}, {\"title\": \"COMPUTE MARKET ALERT: CCJ surges 5.71% to $75.37 (+5.71% 24h swing)\", \"link\": \"https://finance.yahoo.com/quote/CCJ\", \"source\": \"yfinance / CCJ\", \"badge\": \"MARKET\"}]",
+        "image_url": null,
+        "published_at": "2026-11-10T09:01:03.755546+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "COMPUTE MARKET ALERT: META surges 5.12% to $641.37 (+5.12% 24h swing)",
+            "link": "https://finance.yahoo.com/quote/META",
+            "source": "yfinance / META",
+            "badge": "MARKET"
+          },
+          {
+            "title": "COMPUTE MARKET ALERT: CCJ surges 5.71% to $75.37 (+5.71% 24h swing)",
+            "link": "https://finance.yahoo.com/quote/CCJ",
+            "source": "yfinance / CCJ",
+            "badge": "MARKET"
+          }
+        ]
+      }
+    ],
+    "[POLICY & SOVEREIGNTY]": [
+      {
+        "id": 71,
+        "cluster_id": "clust_20261110_6a3437ea",
+        "pillar_category": "[POLICY & SOVEREIGNTY]",
+        "primary_entity": "OpenAI",
+        "headline": "OpenAI partners with EMEA schools to close AI literacy gap",
+        "what_happened": "OpenAI announced new education partnerships and ThinkYoung research aimed at boosting AI literacy for teachers and students across EMEA.",
+        "technical_summary": "The program bundles curriculum modules, teacher\u2011training workshops, and a sandbox API that limits model temperature to \u22640.6 and caps token output at 2,048 per query to ensure safe, explainable outputs.",
+        "strategic_implication": "By embedding OpenAI tools in public education, the company secures early\u2011stage user adoption and creates a pipeline for future enterprise contracts with school districts.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"Closing the AI guidance gap in education\", \"link\": \"https://openai.com/index/closing-ai-guidance-gap-education\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-10T09:00:00+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "Closing the AI guidance gap in education",
+            "link": "https://openai.com/index/closing-ai-guidance-gap-education",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      }
+    ],
+    "AGENTS & TOOLING": [
+      {
+        "id": 53,
+        "cluster_id": "clust_20261110_6a3437ea",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "OpenAI",
+        "headline": "Closing the AI guidance gap in education",
+        "what_happened": "OpenAI announced new EMEA education partnerships and released ThinkYoung research to help teachers integrate AI literacy.",
+        "technical_summary": "The program bundles curriculum modules, teacher\u2011training workshops, and a sandboxed API that limits model outputs to pedagogically vetted content.",
+        "strategic_implication": "Positions OpenAI as the default AI education vendor, creating a long\u2011term moat through early adoption in schools and potential upsell of enterprise tools.",
+        "hype_vs_substance": "High Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"Closing the AI guidance gap in education\", \"link\": \"https://openai.com/index/closing-ai-guidance-gap-education\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-10T09:00:00+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "Closing the AI guidance gap in education",
+            "link": "https://openai.com/index/closing-ai-guidance-gap-education",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      },
+      {
+        "id": 65,
+        "cluster_id": "clust_20261110_8f206d86",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "CodeRabbit",
+        "headline": "CodeRabbit Claims 20x Software Shipping Velocity via Agentic Code Governance",
+        "what_happened": "CodeRabbit reported using OpenAI models to govern AI-generated code, enabling engineering teams to ship 20 times more software with the same headcount.",
+        "technical_summary": "The workflow utilizes LLMs for automated code review, static analysis, and trust scoring of AI-generated pull requests, reducing human review latency and increasing deployment frequency.",
+        "strategic_implication": "Validates the 'AI-native engineering' thesis, suggesting that software development costs are shifting from labor to compute, potentially disrupting traditional SaaS pricing models.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"CodeRabbit scales agentic software development and ships 20x more\", \"link\": \"https://openai.com/index/coderabbit-codex-daybreak\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-09T08:00:00+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "CodeRabbit scales agentic software development and ships 20x more",
+            "link": "https://openai.com/index/coderabbit-codex-daybreak",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      },
+      {
+        "id": 56,
+        "cluster_id": "clust_20261110_8f206d86",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "OpenAI",
+        "headline": "CodeRabbit scales agentic software development and ships 20x more",
+        "what_happened": "OpenAI introduced CodeRabbit, an agent that orchestrates Codex to generate, test, and merge code, claiming a 20\u2011fold increase in output.",
+        "technical_summary": "CodeRabbit combines a task\u2011planner LLM, a code\u2011generation model (Codex), and an automated CI pipeline that runs unit tests and static analysis before PR creation.",
+        "strategic_implication": "If the claim holds, it could reshape software engineering economics, giving OpenAI a strategic advantage in enterprise dev\u2011ops markets.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"CodeRabbit scales agentic software development and ships 20x more\", \"link\": \"https://openai.com/index/coderabbit-codex-daybreak\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-09T08:00:00+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "CodeRabbit scales agentic software development and ships 20x more",
+            "link": "https://openai.com/index/coderabbit-codex-daybreak",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      },
+      {
+        "id": 43,
+        "cluster_id": "clust_20261110_8f206d86",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "OpenAI",
+        "headline": "CodeRabbit claims 20\u00d7 boost in software output using agentic code generation",
+        "what_happened": "OpenAI\u2019s CodeRabbit platform announced that its AI\u2011driven agents enable development teams to ship software twenty times faster with the same headcount.",
+        "technical_summary": "CodeRabbit couples GPT\u20114o with a custom execution sandbox, uses Codex for code synthesis, and employs a verification loop that runs unit tests and static analysis before committing changes to version control.",
+        "strategic_implication": "If the productivity gains hold, enterprises may replace portions of their engineering workforce with AI agents, creating a new cost\u2011structure and giving OpenAI a foothold in the software\u2011development tooling market.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"CodeRabbit scales agentic software development and ships 20x more\", \"link\": \"https://openai.com/index/coderabbit-codex-daybreak\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-09T08:00:00+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "CodeRabbit scales agentic software development and ships 20x more",
+            "link": "https://openai.com/index/coderabbit-codex-daybreak",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      },
+      {
+        "id": 70,
+        "cluster_id": "clust_20261110_99f12ef7",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "Stanford University",
+        "headline": "Stanford CS146S Redefines Engineering Education with AI-Native Coding Agents",
+        "what_happened": "Stanford's CS146S course integrated open-source maintainers and AI coding agents, requiring students to learn unfamiliar repositories and propose changes using AI tools.",
+        "technical_summary": "The curriculum shifts from syntax memorization to system architecture and code review, leveraging LLMs to handle boilerplate code generation while students focus on high-level design and integration.",
+        "strategic_implication": "Indicates a fundamental shift in software engineering talent requirements, favoring engineers who can orchestrate AI agents over those who write code manually.",
+        "hype_vs_substance": "High Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"[One Million AI Engineer Special] How Stanford Teaches AI-Native Engineering \\u2014 Mihail Eric, Monaco\", \"link\": \"https://latent.space/p/one_million_ai_engineer_special_how_stanford_teaches_ai-native_engineering_mihail_eric_monaco/\", \"source\": \"Latent Space\", \"badge\": \"SUBSTACK\"}, {\"title\": \"How Stanford Teaches AI-Native Engineering \\u2014 Mihail Eric, Monaco\", \"link\": \"https://latent.space/p/cs146s/\", \"source\": \"Latent Space\", \"badge\": \"SUBSTACK\"}]",
+        "image_url": null,
+        "published_at": "2026-11-08T21:23:29+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "[One Million AI Engineer Special] How Stanford Teaches AI-Native Engineering \u2014 Mihail Eric, Monaco",
+            "link": "https://latent.space/p/one_million_ai_engineer_special_how_stanford_teaches_ai-native_engineering_mihail_eric_monaco/",
+            "source": "Latent Space",
+            "badge": "SUBSTACK"
+          },
+          {
+            "title": "How Stanford Teaches AI-Native Engineering \u2014 Mihail Eric, Monaco",
+            "link": "https://latent.space/p/cs146s/",
+            "source": "Latent Space",
+            "badge": "SUBSTACK"
+          }
+        ]
+      },
+      {
+        "id": 62,
+        "cluster_id": "clust_20261110_6a3437ea",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "OpenAI",
+        "headline": "OpenAI Expands EMEA Education Footprint with AI Literacy Frameworks",
+        "what_happened": "OpenAI detailed its EMEA education partnerships and new ThinkYoung research focused on supporting teachers and fostering independent learning through AI literacy.",
+        "technical_summary": "The initiative integrates LLM-based tutoring agents into educational curricula, emphasizing pedagogical guardrails and adaptive learning paths that adjust to student proficiency levels in real-time.",
+        "strategic_implication": "Establishes a long-term B2B2C moat in the education sector, positioning OpenAI as the default infrastructure for the next generation of AI-native professionals.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 6,
+        "source_urls": "[{\"title\": \"Closing the AI guidance gap in education\", \"link\": \"https://openai.com/index/closing-ai-guidance-gap-education\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-10T09:00:00+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "Closing the AI guidance gap in education",
+            "link": "https://openai.com/index/closing-ai-guidance-gap-education",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      },
+      {
+        "id": 55,
+        "cluster_id": "clust_20261110_bb487acb",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "OpenAI",
+        "headline": "Control Room: A central system to track and stop model workloads across our research infrastructure",
+        "what_happened": "OpenAI unveiled a monitoring dashboard that can pause or terminate any model run across its compute fleet for safety reasons.",
+        "technical_summary": "Control Room injects a lightweight watchdog into each job, reports real\u2011time token usage, GPU metrics, and can issue a SIGTERM via a centralized policy engine.",
+        "strategic_implication": "Reduces risk of runaway experiments, improves compliance posture, and may become a sellable safety\u2011as\u2011a\u2011service feature for partners.",
+        "hype_vs_substance": "High Substance",
+        "signal_score": 6,
+        "source_urls": "[{\"title\": \"Control Room: A central system to track and stop model workloads across our research infrastructure\", \"link\": \"https://openai.com/index/control-room\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-09T13:00:00+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "Control Room: A central system to track and stop model workloads across our research infrastructure",
+            "link": "https://openai.com/index/control-room",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      },
+      {
+        "id": 61,
+        "cluster_id": "clust_20261110_99f12ef7",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "Stanford University",
+        "headline": "[One Million AI Engineer Special] How Stanford Teaches AI-Native Engineering \u2014 Mihail Eric, Monaco",
+        "what_happened": "Stanford launched CS146S, a course where students use open\u2011source AI agents to modify real\u2011world codebases in a single prompt.",
+        "technical_summary": "The curriculum integrates GitHub Copilot\u2011style LLMs, automated test harnesses, and a peer\u2011review orchestration layer that logs prompt\u2011to\u2011commit provenance.",
+        "strategic_implication": "Creates a pipeline of AI\u2011fluent engineers, strengthening Stanford\u2019s brand and feeding talent to firms building AI\u2011first products.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 6,
+        "source_urls": "[{\"title\": \"[One Million AI Engineer Special] How Stanford Teaches AI-Native Engineering \\u2014 Mihail Eric, Monaco\", \"link\": \"https://latent.space/p/one_million_ai_engineer_special_how_stanford_teaches_ai-native_engineering_mihail_eric_monaco/\", \"source\": \"Latent Space\", \"badge\": \"SUBSTACK\"}, {\"title\": \"How Stanford Teaches AI-Native Engineering \\u2014 Mihail Eric, Monaco\", \"link\": \"https://latent.space/p/cs146s/\", \"source\": \"Latent Space\", \"badge\": \"SUBSTACK\"}]",
+        "image_url": null,
+        "published_at": "2026-11-08T21:23:29+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "[One Million AI Engineer Special] How Stanford Teaches AI-Native Engineering \u2014 Mihail Eric, Monaco",
+            "link": "https://latent.space/p/one_million_ai_engineer_special_how_stanford_teaches_ai-native_engineering_mihail_eric_monaco/",
+            "source": "Latent Space",
+            "badge": "SUBSTACK"
+          },
+          {
+            "title": "How Stanford Teaches AI-Native Engineering \u2014 Mihail Eric, Monaco",
+            "link": "https://latent.space/p/cs146s/",
+            "source": "Latent Space",
+            "badge": "SUBSTACK"
+          }
+        ]
+      },
+      {
+        "id": 49,
+        "cluster_id": "clust_20261110_6a3437ea",
+        "pillar_category": "AGENTS & TOOLING",
+        "primary_entity": "OpenAI",
+        "headline": "OpenAI Targets Educational Vertical with AI Literacy Frameworks",
+        "what_happened": "OpenAI released new guidance and research findings from its EMEA education partnerships to support teachers in integrating AI for independent learning.",
+        "technical_summary": "The initiative focuses on pedagogical frameworks for AI literacy, leveraging LLM capabilities to assist in curriculum design and student assessment rather than introducing new model architectures.",
+        "strategic_implication": "Establishes a vertical moat in the education sector, positioning OpenAI as the default infrastructure for institutional AI adoption and long-term user habit formation.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 4,
+        "source_urls": "[{\"title\": \"Closing the AI guidance gap in education\", \"link\": \"https://openai.com/index/closing-ai-guidance-gap-education\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-10T09:00:00+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "Closing the AI guidance gap in education",
+            "link": "https://openai.com/index/closing-ai-guidance-gap-education",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      }
+    ],
+    "POLICY & SOVEREIGNTY": [
+      {
+        "id": 40,
+        "cluster_id": "clust_20261110_6a3437ea",
+        "pillar_category": "POLICY & SOVEREIGNTY",
+        "primary_entity": "OpenAI",
+        "headline": "OpenAI launches education partnership program to bridge AI guidance gap in schools",
+        "what_happened": "OpenAI announced new EMEA education collaborations and ThinkYoung research aimed at improving AI literacy for teachers and students.",
+        "technical_summary": "The program bundles OpenAI's GPT\u20114o API with curriculum\u2011aligned lesson modules, provides teacher dashboards for prompt monitoring, and integrates a feedback loop that logs usage metrics for continuous model fine\u2011tuning on educational data.",
+        "strategic_implication": "By embedding its models in K\u201112 curricula, OpenAI secures early\u2011stage user adoption, creates a pipeline for future enterprise contracts, and positions itself as a standard\u2011setter in AI education policy.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"Closing the AI guidance gap in education\", \"link\": \"https://openai.com/index/closing-ai-guidance-gap-education\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-10T09:00:00+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "Closing the AI guidance gap in education",
+            "link": "https://openai.com/index/closing-ai-guidance-gap-education",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      },
+      {
+        "id": 48,
+        "cluster_id": "clust_20261110_99f12ef7",
+        "pillar_category": "POLICY & SOVEREIGNTY",
+        "primary_entity": "Stanford University",
+        "headline": "Stanford rolls out AI\u2011Native engineering curriculum for a million future AI engineers",
+        "what_happened": "Stanford\u2019s CS146S course, taught by Mihail Eric, introduced a project\u2011based program that trains students to work with open\u2011source AI agents on real\u2011world codebases.",
+        "technical_summary": "The syllabus combines hands\u2011on labs using open\u2011source LLMs (e.g., Llama\u20113), version\u2011control bots, and evaluation metrics such as code\u2011completion latency and bug\u2011fix precision across curated repositories.",
+        "strategic_implication": "Standardizing AI\u2011engineer training creates a talent pipeline that industry will rely on, potentially influencing hiring practices and shaping future AI policy discussions around workforce readiness.",
+        "hype_vs_substance": "Moderate Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"[One Million AI Engineer Special] How Stanford Teaches AI-Native Engineering \\u2014 Mihail Eric, Monaco\", \"link\": \"https://latent.space/p/one_million_ai_engineer_special_how_stanford_teaches_ai-native_engineering_mihail_eric_monaco/\", \"source\": \"Latent Space\", \"badge\": \"SUBSTACK\"}, {\"title\": \"How Stanford Teaches AI-Native Engineering \\u2014 Mihail Eric, Monaco\", \"link\": \"https://latent.space/p/cs146s/\", \"source\": \"Latent Space\", \"badge\": \"SUBSTACK\"}]",
+        "image_url": null,
+        "published_at": "2026-11-08T21:23:29+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "[One Million AI Engineer Special] How Stanford Teaches AI-Native Engineering \u2014 Mihail Eric, Monaco",
+            "link": "https://latent.space/p/one_million_ai_engineer_special_how_stanford_teaches_ai-native_engineering_mihail_eric_monaco/",
+            "source": "Latent Space",
+            "badge": "SUBSTACK"
+          },
+          {
+            "title": "How Stanford Teaches AI-Native Engineering \u2014 Mihail Eric, Monaco",
+            "link": "https://latent.space/p/cs146s/",
+            "source": "Latent Space",
+            "badge": "SUBSTACK"
+          }
+        ]
+      }
+    ],
+    "CAPITAL & MARKETS": [
+      {
+        "id": 63,
+        "cluster_id": "clust_20261110_861ca8cc",
+        "pillar_category": "CAPITAL & MARKETS",
+        "primary_entity": "OpenAI",
+        "headline": "ChatGPT Enterprise Enters AWS Marketplace to Streamline Enterprise Procurement",
+        "what_happened": "OpenAI made ChatGPT Enterprise available via AWS Marketplace, allowing organizations to utilize existing AWS purchasing and billing relationships for simplified procurement.",
+        "technical_summary": "This integration leverages AWS's existing identity and access management (IAM) and billing infrastructure to reduce friction in deploying enterprise-grade LLM instances, likely via containerized or serverless endpoints.",
+        "strategic_implication": "Reduces sales cycle friction for large enterprises already committed to AWS, directly competing with Microsoft Azure's native OpenAI integration and expanding market share in cloud-anchored enterprises.",
+        "hype_vs_substance": "High Substance",
+        "signal_score": 7,
+        "source_urls": "[{\"title\": \"ChatGPT Enterprise now available in AWS Marketplace\", \"link\": \"https://openai.com/index/chatgpt-enterprise-aws-marketplace\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-09T19:00:00+00:00",
+        "is_dispatched": 0,
+        "parsed_sources": [
+          {
+            "title": "ChatGPT Enterprise now available in AWS Marketplace",
+            "link": "https://openai.com/index/chatgpt-enterprise-aws-marketplace",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      },
+      {
+        "id": 50,
+        "cluster_id": "clust_20261110_861ca8cc",
+        "pillar_category": "CAPITAL & MARKETS",
+        "primary_entity": "OpenAI",
+        "headline": "OpenAI Enters AWS Marketplace to Streamline Enterprise Procurement",
+        "what_happened": "ChatGPT Enterprise became available via AWS Marketplace, allowing organizations to utilize existing AWS purchasing and billing relationships for AI services.",
+        "technical_summary": "This is a distribution and billing integration rather than a technical model change, leveraging AWS's enterprise procurement infrastructure to lower friction for B2B adoption.",
+        "strategic_implication": "Reduces sales cycle friction for enterprise deals by aligning with existing cloud budgets, potentially increasing market share against native cloud AI offerings.",
+        "hype_vs_substance": "High Substance",
+        "signal_score": 5,
+        "source_urls": "[{\"title\": \"ChatGPT Enterprise now available in AWS Marketplace\", \"link\": \"https://openai.com/index/chatgpt-enterprise-aws-marketplace\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-09T19:00:00+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "ChatGPT Enterprise now available in AWS Marketplace",
+            "link": "https://openai.com/index/chatgpt-enterprise-aws-marketplace",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      }
+    ],
+    "MODELS & RESEARCH": [
+      {
+        "id": 51,
+        "cluster_id": "clust_20261110_bb487acb",
+        "pillar_category": "MODELS & RESEARCH",
+        "primary_entity": "OpenAI",
+        "headline": "OpenAI Deploys 'Control Room' for Real-Time Model Workload Safety Monitoring",
+        "what_happened": "OpenAI introduced a central system called 'Control Room' that tracks model workloads across its research infrastructure to rapidly halt operations during safety or security incidents.",
+        "technical_summary": "The system provides centralized observability and kill-switch capabilities for distributed training and inference clusters, addressing operational safety risks in large-scale model deployment.",
+        "strategic_implication": "Enhances operational resilience and regulatory compliance posture, reducing the risk of catastrophic model failures or security breaches that could halt development.",
+        "hype_vs_substance": "High Substance",
+        "signal_score": 6,
+        "source_urls": "[{\"title\": \"Control Room: A central system to track and stop model workloads across our research infrastructure\", \"link\": \"https://openai.com/index/control-room\", \"source\": \"OpenAI News\", \"badge\": \"LAB\"}]",
+        "image_url": null,
+        "published_at": "2026-11-09T13:00:00+00:00",
+        "is_dispatched": 1,
+        "parsed_sources": [
+          {
+            "title": "Control Room: A central system to track and stop model workloads across our research infrastructure",
+            "link": "https://openai.com/index/control-room",
+            "source": "OpenAI News",
+            "badge": "LAB"
+          }
+        ]
+      }
+    ]
+  },
+  "trending_repos": [
+    {
+      "id": 90,
+      "date": "2026-11-10",
+      "repo_name": "DeusData/codebase-memory-mcp",
+      "repo_url": "https://github.com/DeusData/codebase-memory-mcp",
+      "language": "C",
+      "stars_gained": 187,
+      "total_stars": 48445,
+      "description": "Local code intelligence for developers and AI agents. Connect code, docs and infrastructure in a persistent graph, with CBM Lens, MCP tools, agent integrations and change-aware test selection."
+    },
+    {
+      "id": 89,
+      "date": "2026-11-10",
+      "repo_name": "sickn33/agentic-awesome-skills",
+      "repo_url": "https://github.com/sickn33/agentic-awesome-skills",
+      "language": "Python",
+      "stars_gained": 165,
+      "total_stars": 49460,
+      "description": "2,955+ reusable AI agent skills for Claude Code, Codex, Cursor and Gemini CLI. AAS Core adds local catalog discovery, agent-owned selection and plan preview. CLI, MCP and plugins."
+    },
+    {
+      "id": 88,
+      "date": "2026-11-10",
+      "repo_name": "zylon-ai/private-gpt",
+      "repo_url": "https://github.com/zylon-ai/private-gpt",
+      "language": "Python",
+      "stars_gained": 44,
+      "total_stars": 57633,
+      "description": "Complete API layer for private AI applications on local models: RAG, skills, tools, MCP, text-to-sql, and more. Works with any OpenAI-compatible inference server."
+    },
+    {
+      "id": 87,
+      "date": "2026-11-10",
+      "repo_name": "BerriAI/litellm",
+      "repo_url": "https://github.com/BerriAI/litellm",
+      "language": "Python",
+      "stars_gained": 52,
+      "total_stars": 63037,
+      "description": "The fastest, litest AI Gateway. Rust core with Python SDK. Call 100+ LLM APIs in OpenAI (or native) format with cost tracking, guardrails, load balancing, and logging [Bedrock, Azure, OpenAI, Anthropic, OpenAI, VertexAI, vLLM, Nvidia NIM]"
+    }
+  ],
+  "trending_papers": [
+    {
+      "id": 73,
+      "date": "2026-11-10",
+      "paper_id": "hf_2611.12806",
+      "title": "Learning Heterogeneous Tactile Representation for General Dexterous Manipulation",
+      "url": "https://huggingface.co/papers/2611.12806",
+      "upvotes": 89,
+      "summary": "Tactile sensing is an indispensable modality for contact-rich dexterous manipulation, a capability that hints at the ultimate frontiers of embodied intelligence. However, commercially available tactile sensors are still at a relatively early stage of development, with each type of sensor offering irreplaceable strengths alongside its own drawbacks. A key challenge is thus to free tactile understanding from sensor-specific physics, so that embodied models can effectively leverage heterogeneous ta",
+      "source": "HuggingFace"
+    },
+    {
+      "id": 37,
+      "date": "2026-11-10",
+      "paper_id": "hf_2611.06043",
+      "title": "Confucius4-R2T2: A Stable-Prefix Streaming ASR Model for Real Real-Time Transcription",
+      "url": "https://huggingface.co/papers/2611.06043",
+      "upvotes": 86,
+      "summary": "Streaming speech recognition is increasingly consumed by machines, such as translators and voice agents, that act on each token as it appears. A token that is later revised costs wasted work or a wrong action. In this work, we present Confucius4-R2T2 (short for Real Real-Time Transcription), a stable-prefix streaming ASR model that never modifies its earlier output while maintaining high accuracy and low latency. R2T2 is obtained by post-training Qwen3-ASR-1.7B on 1,500 hours of Chinese and Engl",
+      "source": "HuggingFace"
+    },
+    {
+      "id": 74,
+      "date": "2026-11-10",
+      "paper_id": "hf_2611.08264",
+      "title": "SplatAnything: Gaussian Spacing Normalization for Feed-forward 3DGS across Arbitrary Scenes",
+      "url": "https://huggingface.co/papers/2611.08264",
+      "upvotes": 67,
+      "summary": "We identify a key limitation of existing feed-forward 3DGS methods: Gaussian attributes are typically predicted in a radial-distance-normalized space that canonicalizes a global radial statistic of the reconstructed geometry, while the spacing between neighboring Gaussian centers can still vary substantially across scene scales and camera configurations. This mismatch induces systematic shifts in Gaussian-scale targets, leading to ambiguous supervision. To address this, we propose SplatAnything ",
+      "source": "HuggingFace"
+    },
+    {
+      "id": 75,
+      "date": "2026-11-10",
+      "paper_id": "hf_2611.03953",
+      "title": "P^2-MOPD: Accelerating Multi-Teacher On-Policy Distillation via Parameter Priors",
+      "url": "https://huggingface.co/papers/2611.03953",
+      "upvotes": 49,
+      "summary": "Multi-teacher on-policy distillation consolidates expert capabilities by supervising student-generated trajectories, whereas task arithmetic offers a training-free alternative through linear parameter combinations. We view the linear combination of student and expert parameters as a single differentiable model and propose P^2-MOPD, which jointly optimizes the mixing coefficients and the student weights under the same on-policy distillation objective. Unlike task arithmetic, which stays within th",
+      "source": "HuggingFace"
+    }
+  ]
+}

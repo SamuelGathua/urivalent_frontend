@@ -16,11 +16,19 @@ export async function POST(request: Request) {
       request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
       '127.0.0.1';
 
-    const { success } = await ratelimit.limit(`contact_${ip}`);
-    if (!success) {
+    try {
+      const { success } = await ratelimit.limit(`contact_${ip}`);
+      if (!success) {
+        return NextResponse.json(
+          { error: 'Too many requests. Please try again in 48 hours.' },
+          { status: 429 }
+        );
+      }
+    } catch (rlError) {
+      console.error('[contact] Rate limit check failed:', rlError);
       return NextResponse.json(
-        { error: 'Too many requests. Please try again in 48 hours.' },
-        { status: 429 }
+        { error: 'Rate limiter unavailable' },
+        { status: 500 }
       );
     }
 

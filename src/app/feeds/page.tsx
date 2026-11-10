@@ -89,7 +89,7 @@ interface FeedData {
   trending_papers: PaperSnapshot[];
 }
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "https://api.urivalent.tech").replace(/\/$/, "");
 
 const CATEGORY_ORDER = [
   "Silicon & Nanotech",
@@ -234,15 +234,18 @@ export default function PublicDashboard() {
           res = await fetch(`${API_BASE_URL}/api/feed`, {
             cache: "no-store",
           });
-        } catch (initialErr) {
+          if (!res.ok && typeof window !== "undefined" && API_BASE_URL !== window.location.origin) {
+            res = await fetch(`/api/feed`, { cache: "no-store" });
+          }
+        } catch {
           if (typeof window !== "undefined" && API_BASE_URL !== window.location.origin) {
             res = await fetch(`/api/feed`, { cache: "no-store" });
           } else {
-            throw initialErr;
+            throw new Error(`Unable to reach intelligence API at ${API_BASE_URL}`);
           }
         }
         if (!res.ok) {
-          throw new Error(`Backend returned HTTP ${res.status}`);
+          throw new Error(`Intelligence feed returned HTTP ${res.status}`);
         }
         const json: FeedData = await res.json();
         setData(json);
@@ -250,7 +253,7 @@ export default function PublicDashboard() {
       } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         console.error("Failed to load feed:", err);
-        setError(`Unable to connect to intelligence API (${errorMsg}). Please ensure the FastAPI backend is running on port 8000.`);
+        setError(`Unable to connect to intelligence API (${errorMsg}). Please check the status of https://api.urivalent.tech.`);
       } finally {
         setLoading(false);
       }

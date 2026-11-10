@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import SubscribeForm from "@/components/SubscribeForm";
 
 interface SystemHealth {
   status: string;
@@ -27,7 +29,36 @@ interface SystemHealth {
   };
 }
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "https://api.urivalent.tech").replace(/\/$/, "");
+
+/**
+ * Resilient Admin API Dispatcher:
+ * Attempts direct call to cloud API first; automatically falls back to same-origin
+ * Edge proxy (/api/admin-proxy/...) if browser encounters CORS blocks or network errors.
+ */
+async function callAdminApi(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    return res;
+  } catch (directErr) {
+    try {
+      const res = await fetch(`/api/admin-proxy${endpoint}`, options);
+      return res;
+    } catch {
+      throw directErr;
+    }
+  }
+}
+
+// Security: Maximum login trials configuration
+const MAX_LOGIN_TRIALS = 3;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15-minute lockout
+
+function formatLockout(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+}
 
 export default function AdminPortal() {
   // Authentication & Lock State
@@ -43,11 +74,82 @@ export default function AdminPortal() {
   const [loginLoading, setLoginLoading] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
+  // Maximum 3 login trials state
+  const [failedTrials, setFailedTrials] = useState<number>(0);
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
+
+  // Initialize lockout state from localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncStorageTimer = setTimeout(() => {
+      const savedAttempts = parseInt(localStorage.getItem("urivalent_admin_failed_trials") || "0", 10);
+      const savedLockout = parseInt(localStorage.getItem("urivalent_admin_lockout_until") || "0", 10);
+      const now = Date.now();
+
+      if (savedLockout && savedLockout > now) {
+        setFailedTrials(savedAttempts || MAX_LOGIN_TRIALS);
+        setRemainingSeconds(Math.ceil((savedLockout - now) / 1000));
+      } else if (savedLockout && savedLockout <= now) {
+        localStorage.removeItem("urivalent_admin_lockout_until");
+        localStorage.removeItem("urivalent_admin_failed_trials");
+        setFailedTrials(0);
+        setRemainingSeconds(0);
+      } else {
+        setFailedTrials(savedAttempts || 0);
+      }
+    }, 0);
+
+    return () => clearTimeout(syncStorageTimer);
+  }, []);
+
+  // Countdown timer for lockout
+  useEffect(() => {
+    if (remainingSeconds <= 0) return;
+
+    const timer = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("urivalent_admin_lockout_until");
+            localStorage.removeItem("urivalent_admin_failed_trials");
+          }
+          setFailedTrials(0);
+          setLoginError(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [remainingSeconds]);
+
   // Dashboard State
-  const [testEmail, setTestEmail] = useState<string>("gathuamwangi45@gmail.com");
+  const [testEmail, setTestEmail] = useState<string>("");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [health, setHealth] = useState<SystemHealth | null>(null);
+
+  // Floating navbar state
+  const [navVisible, setNavVisible] = useState<boolean>(true);
+  const [lastScrollY, setLastScrollY] = useState<number>(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > 60 && currentScrollY > lastScrollY) {
+        setNavVisible(false);
+      } else {
+        setNavVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
 
   // 1. Verify existing session on mount
   useEffect(() => {
@@ -63,7 +165,7 @@ export default function AdminPortal() {
       }
 
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/verify`, {
+        const res = await callAdminApi("/admin/verify", {
           headers: {
             Authorization: `Bearer ${savedToken}`,
           },
@@ -95,7 +197,7 @@ export default function AdminPortal() {
   // 2. Fetch live system health
   async function fetchHealth() {
     try {
-      const res = await fetch(`${API_BASE_URL}/health`);
+      const res = await callAdminApi("/health");
       if (res.ok) {
         const json = await res.json();
         setHealth(json);
@@ -108,11 +210,18 @@ export default function AdminPortal() {
   // 3. Unlock Admin Console (Login)
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
+
+    // Check if terminal is currently locked out
+    if (remainingSeconds > 0) {
+      setLoginError(`Terminal locked due to 3 failed attempts. Please wait ${formatLockout(remainingSeconds)}.`);
+      return;
+    }
+
     setLoginError(null);
     setLoginLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/login`, {
+      const res = await callAdminApi("/admin/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -133,14 +242,36 @@ export default function AdminPortal() {
         setIsAuthenticated(true);
         localStorage.setItem("urivalent_admin_token", token);
         localStorage.setItem("urivalent_admin_username", username);
+
+        // Reset trial counters on successful login
+        setFailedTrials(0);
+        setRemainingSeconds(0);
+        localStorage.removeItem("urivalent_admin_failed_trials");
+        localStorage.removeItem("urivalent_admin_lockout_until");
+
         setLoginPasscode("");
         fetchHealth();
       } else {
-        setLoginError(data.detail || "Authentication rejected: Invalid administrator username or passcode. You can set them in urivalent_backend/.env (ADMIN_USERNAME & ADMIN_PASSWORD).");
+        const nextFailed = failedTrials + 1;
+        setFailedTrials(nextFailed);
+        localStorage.setItem("urivalent_admin_failed_trials", String(nextFailed));
+
+        if (nextFailed >= MAX_LOGIN_TRIALS || res.status === 429) {
+          const lockTime = Date.now() + LOCKOUT_DURATION_MS;
+          setRemainingSeconds(Math.ceil(LOCKOUT_DURATION_MS / 1000));
+          localStorage.setItem("urivalent_admin_lockout_until", String(lockTime));
+          setLoginError("Maximum login trials exceeded (3/3). Terminal locked for 15 minutes for security.");
+        } else {
+          const trialsLeft = MAX_LOGIN_TRIALS - nextFailed;
+          setLoginError(
+            data.detail ||
+            `Invalid administrator credentials. ${trialsLeft} trial${trialsLeft === 1 ? "" : "s"} remaining.`
+          );
+        }
       }
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      setLoginError(`Connection failure: ${errorMsg}. Please ensure FastAPI is running.`);
+      setLoginError(`Connection failure: ${errorMsg}. Please verify your connection to https://api.urivalent.tech.`);
     } finally {
       setLoginLoading(false);
     }
@@ -149,7 +280,7 @@ export default function AdminPortal() {
   // 4. Lock Admin Console (Logout)
   async function handleLock() {
     try {
-      await fetch(`${API_BASE_URL}/admin/logout`, { method: "POST" });
+      await callAdminApi("/admin/logout", { method: "POST" });
     } catch {
       // Ignore network errors on logout
     }
@@ -185,7 +316,7 @@ export default function AdminPortal() {
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/test-email`, {
+      const res = await callAdminApi("/admin/test-email", {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ email: testEmail }),
@@ -223,7 +354,7 @@ export default function AdminPortal() {
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/force-news`, {
+      const res = await callAdminApi("/admin/force-news", {
         method: "POST",
         headers: getAuthHeaders(),
       });
@@ -264,7 +395,7 @@ export default function AdminPortal() {
     setMessage(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/send-morning-brief`, {
+      const res = await callAdminApi("/admin/send-morning-brief", {
         method: "POST",
         headers: getAuthHeaders(),
       });
@@ -300,10 +431,10 @@ export default function AdminPortal() {
   // ---------------------------------------------------------------------------
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-[#164A41] text-white flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-[#0A1D16] text-white flex items-center justify-center font-sans">
         <div className="text-center space-y-3">
           <div className="h-10 w-10 border-4 border-[#F1B24A] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs uppercase font-bold tracking-widest text-[#9DC88D]">
+          <p className="text-xs uppercase font-mono font-bold tracking-widest text-[#9DC88D]">
             Authenticating Console Security...
           </p>
         </div>
@@ -316,449 +447,930 @@ export default function AdminPortal() {
   // ---------------------------------------------------------------------------
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#164A41] text-white flex flex-col font-sans antialiased">
-        {/* NAV HEADER */}
-        <header className="bg-[#0F352E] border-b-2 border-[#F1B24A] py-3.5 px-6 shadow-md">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <img
-                src="/urivalent_logo.png"
-                alt="Urivalent Logo"
-                className="h-9 w-auto object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.png`;
-                }}
-              />
-              <span className="text-xs font-bold tracking-widest uppercase text-[#9DC88D] border-l border-[#9DC88D]/40 pl-3">
-                Security Enclave
-              </span>
+      <div className="min-h-screen bg-[#0A1D16] text-white flex flex-col font-sans antialiased selection:bg-[#F1B24A] selection:text-[#164A41] relative">
+        {/* Subtle ambient lighting */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(22,74,65,0.45),transparent_75%)] pointer-events-none" />
+
+        {/* ================================================================== */}
+        {/* FLOATING GLASS ISLAND NAVIGATION DOCK                              */}
+        {/* ================================================================== */}
+        <header
+          className={`fixed top-4 sm:top-5 left-0 right-0 z-50 px-4 sm:px-8 transition-all duration-700 ease-out ${
+            navVisible
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-24 opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="max-w-[1340px] mx-auto bg-[#0A1D16]/85 backdrop-blur-xl border border-white/[0.14] rounded-full px-5 sm:px-6 py-2.5 sm:py-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6)] flex items-center justify-between gap-4">
+            {/* Luminous Pearl Pod Logo */}
+            <Link href="/" className="flex items-center gap-2 group min-h-[44px]" aria-label="Urivalent Homepage">
+              <div className="bg-white/[0.94] px-3.5 py-1.5 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.3)] transition-transform group-hover:scale-[1.03]">
+                <Image
+                  src="/urivalent_logo.webp"
+                  alt="Urivalent"
+                  width={84}
+                  height={28}
+                  className="h-6 sm:h-7 w-auto object-contain"
+                  priority
+                />
+              </div>
             </Link>
+
+            {/* Center Navigation Links */}
+            <nav className="hidden md:flex items-center gap-1 sm:gap-2 text-[11px] font-mono tracking-wider text-white/80">
+              <Link
+                href="/"
+                className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+              >
+                Overview
+              </Link>
+              <Link
+                href="/feeds"
+                className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+              >
+                Feeds
+              </Link>
+              <Link
+                href="/terms"
+                className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+              >
+                Terms
+              </Link>
+              <Link
+                href="/privacy"
+                className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+              >
+                Privacy
+              </Link>
+              <Link
+                href="/contact"
+                className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+              >
+                Contact
+              </Link>
+              <Link
+                href="/admin"
+                className="px-3 py-1.5 rounded-full text-[#F1B24A] bg-white/[0.08] font-bold"
+              >
+                Admin
+              </Link>
+            </nav>
+
+            {/* Right Action: Access Feed CTA */}
             <Link
-              href="/"
-              className="text-xs text-[#9DC88D] hover:text-white uppercase font-bold tracking-wider transition"
+              href="/feeds"
+              className="bg-[#F1B24A] hover:bg-[#dfa23c] text-[#164A41] text-[10px] font-bold font-mono uppercase tracking-[0.16em] px-4 py-2 min-h-[40px] rounded-full transition-all shadow-sm hover:shadow-md inline-flex items-center gap-1 active:scale-95"
             >
-              &larr; Return to Public Feed
+              <span>Feed</span>
+              <span className="text-xs">↗</span>
             </Link>
           </div>
         </header>
 
-        {/* LOCK SCREEN BODY */}
-        <main className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="max-w-md w-full bg-white text-[#164A41] rounded-2xl shadow-2xl border-t-8 border-[#F1B24A] p-8 sm:p-10 relative overflow-hidden">
-            {/* Top Security Banner */}
-            <div className="text-center space-y-3 pb-6 border-b border-[#9DC88D]/30">
-              <div className="h-16 w-16 bg-[#F8FAF8] border-2 border-[#F1B24A] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-[#F1B24A]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  />
-                </svg>
-              </div>
-
-              <div>
-                <h1 className="text-lg font-black tracking-widest uppercase text-[#164A41]">
-                  Operations Vault
-                </h1>
-                <p className="text-xs text-[#4D774E] font-medium tracking-wide mt-0.5">
-                  Restricted Administrator Enclave &bull; Pipeline Controller
-                </p>
-              </div>
-
-              <div className="inline-block bg-[#164A41]/5 border border-[#164A41]/15 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider text-[#164A41]">
-                Protected by JWT + Secrets Protocol
+        {/* ================================================================== */}
+        {/* MAIN BODY: SPLIT-CARD DESIGN INSPIRED BY IMAGE 1                   */}
+        {/* ================================================================== */}
+        <main className="relative z-10 flex-1 flex items-center justify-center pt-28 sm:pt-36 pb-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[940px] w-full bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_25px_80px_rgba(0,0,0,0.55)] border border-white/20 overflow-hidden grid grid-cols-1 md:grid-cols-12">
+            {/* LEFT HALF: ARTWORK PANEL WITH login.jpeg */}
+            <div className="md:col-span-6 relative min-h-[280px] md:min-h-[580px] bg-[#161412] overflow-hidden">
+              <Image
+                src="/login.jpeg"
+                alt="Urivalent Frontier"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover object-center"
+                priority
+              />
+              {/* Artistic subtle overlay matching Image 1 */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/40 flex flex-col justify-between p-6 sm:p-8">
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#F1B24A] font-bold">
+                    URIVALENT
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl sm:text-3xl font-medium tracking-[0.25em] uppercase text-white font-sans drop-shadow-md">
+                    WELCOME
+                  </h2>
+                  <p className="text-xs text-white/75 font-light leading-relaxed max-w-xs">
+                    Autonomous intelligence synthesis and sovereign compute telemetry console.
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Error Notification */}
-            {loginError && (
-              <div className="mt-6 bg-red-50 border-l-4 border-red-600 p-3.5 rounded text-xs text-red-900 flex items-start gap-2.5">
-                <span className="font-bold text-red-600">✕</span>
-                <span className="leading-relaxed">{loginError}</span>
-              </div>
-            )}
+            {/* RIGHT HALF: LOGIN FORM */}
+            <div className="md:col-span-6 bg-white p-8 sm:p-12 lg:p-14 flex flex-col justify-center text-[#164A41]">
+              {/* Title & Subtitle */}
+              <h1
+                className="text-3xl sm:text-4xl font-medium tracking-tight text-[#0A1D16] mb-2 leading-[1.1]"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+              >
+                Login
+              </h1>
+              <p className="text-xs text-gray-500 font-sans mb-8">
+                Enter your institutional credentials to authenticate.
+              </p>
 
-            {/* Unlock Form */}
-            <form onSubmit={handleUnlock} className="mt-6 space-y-5">
-              <div>
-                <label
-                  htmlFor="admin_user"
-                  className="block text-xs font-bold uppercase tracking-wider text-[#164A41] mb-1.5"
-                >
-                  Administrator Username
-                </label>
-                <input
-                  type="text"
-                  id="admin_user"
-                  value={loginUsername}
-                  onChange={(e) => setLoginUsername(e.target.value)}
-                  required
-                  autoComplete="username"
-                  placeholder="Administrator Username"
-                  className="w-full px-4 py-2.5 rounded-lg border-2 border-[#9DC88D] text-[#164A41] font-medium focus:border-[#F1B24A] focus:outline-none transition text-sm bg-[#F8FAF8]"
-                />
-              </div>
+              {/* Security Lockout Alert */}
+              {remainingSeconds > 0 ? (
+                <div className="mb-6 bg-red-500/10 border border-red-500/30 p-4 rounded-2xl text-xs text-red-900 flex items-start gap-3">
+                  <span className="text-lg shrink-0">⏳</span>
+                  <div className="space-y-1">
+                    <p className="font-bold uppercase tracking-wider font-mono text-[10px] text-red-900">
+                      Terminal Locked (3/3 Trials Exceeded)
+                    </p>
+                    <p className="leading-relaxed text-red-800 text-[11px]">
+                      Access temporarily suspended for security. Cooldown expires in{" "}
+                      <span className="font-mono font-bold text-red-950 bg-red-200/70 px-2 py-0.5 rounded-md">
+                        {formatLockout(remainingSeconds)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ) : failedTrials > 0 && failedTrials < MAX_LOGIN_TRIALS ? (
+                <div className="mb-5 flex items-center justify-between text-[11px] font-mono text-amber-900 bg-amber-500/15 border border-amber-500/30 px-3.5 py-2 rounded-xl">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse"></span>
+                    <span>Attempt {failedTrials} of {MAX_LOGIN_TRIALS} used</span>
+                  </span>
+                  <span className="font-bold text-amber-950">
+                    {MAX_LOGIN_TRIALS - failedTrials} trial{MAX_LOGIN_TRIALS - failedTrials === 1 ? "" : "s"} left
+                  </span>
+                </div>
+              ) : null}
 
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
+              {/* Error Alert */}
+              {loginError && remainingSeconds === 0 && (
+                <div className="mb-6 bg-red-50/90 border border-red-200/80 p-3.5 rounded-xl text-xs text-red-900 flex items-start gap-2.5">
+                  <span className="font-bold text-red-600 shrink-0">✕</span>
+                  <span className="leading-relaxed">{loginError}</span>
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleUnlock} className="space-y-5">
+                <div>
+                  <label
+                    htmlFor="admin_user"
+                    className="block text-[11px] font-mono font-bold uppercase tracking-[0.16em] text-[#164A41]/80 mb-2 pl-1"
+                  >
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    id="admin_user"
+                    value={loginUsername}
+                    onChange={(e) => setLoginUsername(e.target.value)}
+                    required
+                    disabled={remainingSeconds > 0 || loginLoading}
+                    autoComplete="username"
+                    placeholder="Enter username"
+                    className="w-full bg-[#F5F7F6] border border-gray-200 focus:border-[#164A41] focus:bg-white rounded-xl px-4 py-3 text-sm text-[#164A41] font-sans focus:outline-none transition-all placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
                   <label
                     htmlFor="admin_pass"
-                    className="block text-xs font-bold uppercase tracking-wider text-[#164A41]"
+                    className="block text-[11px] font-mono font-bold uppercase tracking-[0.16em] text-[#164A41]/80 mb-2 pl-1"
                   >
-                    Security Passcode
+                    Password
                   </label>
+                  <div className="relative">
+                    <input
+                      type={showPasscode ? "text" : "password"}
+                      id="admin_pass"
+                      value={loginPasscode}
+                      onChange={(e) => setLoginPasscode(e.target.value)}
+                      required
+                      disabled={remainingSeconds > 0 || loginLoading}
+                      autoComplete="current-password"
+                      placeholder="Enter password"
+                      className="w-full bg-[#F5F7F6] border border-gray-200 focus:border-[#164A41] focus:bg-white rounded-xl pl-4 pr-11 py-3 text-sm text-[#164A41] font-sans focus:outline-none transition-all placeholder:text-gray-400 font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasscode(!showPasscode)}
+                      disabled={remainingSeconds > 0}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#164A41] p-1.5 rounded-lg transition-colors focus:outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      aria-label={showPasscode ? "Hide password" : "Show password"}
+                    >
+                      {showPasscode ? (
+                        /* Eye-slash icon (Hide) */
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                        </svg>
+                      ) : (
+                        /* Eye icon (Show) */
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2">
                   <button
-                    type="button"
-                    onClick={() => setShowPasscode(!showPasscode)}
-                    className="text-[11px] text-[#4D774E] hover:text-[#164A41] font-semibold transition"
+                    type="submit"
+                    disabled={remainingSeconds > 0 || loginLoading}
+                    className="w-full bg-[#0A1D16] hover:bg-[#164A41] text-white rounded-full py-3.5 px-6 font-semibold text-sm transition-all shadow-md hover:shadow-lg active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    {showPasscode ? "Hide" : "Reveal"}
+                    {loginLoading ? (
+                      <>
+                        <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        <span>Authenticating...</span>
+                      </>
+                    ) : remainingSeconds > 0 ? (
+                      <span>Locked ({formatLockout(remainingSeconds)})</span>
+                    ) : (
+                      <span>Login</span>
+                    )}
                   </button>
                 </div>
-                <input
-                  type={showPasscode ? "text" : "password"}
-                  id="admin_pass"
-                  value={loginPasscode}
-                  onChange={(e) => setLoginPasscode(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  placeholder="••••••••••••"
-                  className="w-full px-4 py-2.5 rounded-lg border-2 border-[#9DC88D] text-[#164A41] font-medium focus:border-[#F1B24A] focus:outline-none transition text-sm bg-[#F8FAF8] font-mono"
-                />
-              </div>
+              </form>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={loginLoading}
-                  className="w-full bg-[#F1B24A] hover:bg-[#F1B24A]/90 disabled:opacity-50 text-[#164A41] font-black uppercase tracking-wider py-3 rounded-lg shadow-md hover:shadow-lg transition text-xs flex items-center justify-center gap-2"
+              <div className="mt-8 pt-4 text-center">
+                <Link
+                  href="/"
+                  className="text-xs text-gray-400 hover:text-[#164A41] transition-colors inline-flex items-center gap-1 font-mono"
                 >
-                  {loginLoading ? (
-                    <>
-                      <span className="h-4 w-4 border-2 border-[#164A41] border-r-transparent rounded-full animate-spin"></span>
-                      <span>Verifying Passcode...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Unlock Operations Console</span>
-                      <span>&rarr;</span>
-                    </>
-                  )}
-                </button>
+                  <span>←</span>
+                  <span>Return to public feed</span>
+                </Link>
               </div>
-            </form>
-
-            <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-              <p className="text-[11px] text-gray-500 leading-relaxed">
-                Credentials configured via environment variables (<code className="font-mono text-[10px]">ADMIN_USERNAME</code> &amp; <code className="font-mono text-[10px]">ADMIN_PASSWORD</code>).
-              </p>
             </div>
           </div>
         </main>
 
-        <footer className="bg-[#0F352E] border-t border-[#9DC88D]/30 py-3.5 px-6 text-center text-xs text-[#9DC88D]/70">
-          Urivalent Enclave &bull; Constant-Time Digest Verification &bull; Signed HS256 JWT
+        {/* ================================================================== */}
+        {/* FOOTER — MATCHING LANDING PAGE                                     */}
+        {/* ================================================================== */}
+        <footer className="bg-[#0C241C] border-t border-[#9DC88D]/15 pt-10 sm:pt-14 pb-8 px-6 sm:px-10 lg:px-16 text-white mt-auto">
+          <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start">
+            {/* Column 1: Brand & Identity (4 cols) */}
+            <div className="md:col-span-4 space-y-3">
+              <Link href="/" className="inline-block group" aria-label="Urivalent Homepage">
+                <div className="bg-white/[0.94] hover:bg-white px-3.5 py-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.25)] transition-all group-hover:scale-[1.03] inline-block">
+                  <Image
+                    src="/urivalent_logo.webp"
+                    alt="Urivalent"
+                    width={78}
+                    height={26}
+                    className="h-5 sm:h-5.5 w-auto object-contain"
+                  />
+                </div>
+              </Link>
+              <p className="text-[11px] text-white/60 leading-relaxed max-w-sm font-light">
+                Autonomously tracking frontier models, silicon architecture, sovereign compute infrastructure, agent tooling, and capital markets.
+              </p>
+              <div className="text-[10px] font-mono text-white/40 pt-1">
+                &copy; {new Date().getFullYear()} Urivalent. All rights reserved.
+              </div>
+            </div>
+
+            {/* Column 2: Redirect Links rearranged into a list (3 cols) */}
+            <div className="md:col-span-3">
+              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#F1B24A] font-semibold block mb-3">
+                NAVIGATION
+              </span>
+              <ul className="space-y-2 text-xs font-mono text-white/80">
+                <li>
+                  <Link href="/" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                    <span className="text-white/30 text-[10px]">›</span>
+                    <span>Overview</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/feeds" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                    <span className="text-white/30 text-[10px]">›</span>
+                    <span>Live Feeds</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                    <span className="text-white/30 text-[10px]">›</span>
+                    <span>Terms &amp; Conditions</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                    <span className="text-white/30 text-[10px]">›</span>
+                    <span>Privacy Policy</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                    <span className="text-white/30 text-[10px]">›</span>
+                    <span>Contact Desk</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin" className="text-[#F1B24A] hover:underline font-bold inline-flex items-center gap-1.5">
+                    <span className="text-[#F1B24A]/50 text-[10px]">›</span>
+                    <span>Admin Console ↗</span>
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Subscribe form just beside the redirect links (5 cols) */}
+            <div className="md:col-span-5 space-y-2.5">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
+                <span className="text-[#F1B24A] text-[9px] font-mono font-semibold uppercase tracking-[0.2em]">
+                  DISPATCH BRIEFING
+                </span>
+              </div>
+              <h4
+                className="text-base sm:text-lg font-medium tracking-tight text-white"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+              >
+                Subscribe to Sovereign Signals
+              </h4>
+              <p className="text-[11px] text-white/65 font-light leading-relaxed max-w-md">
+                Daily synthesized intelligence on frontier AI models, silicon bottlenecks, and sovereign compute infrastructure.
+              </p>
+              <div className="pt-1 max-w-md">
+                <SubscribeForm />
+              </div>
+            </div>
+          </div>
         </footer>
       </div>
     );
   }
 
   // ---------------------------------------------------------------------------
-  // RENDER: UNLOCKED ADMIN OPERATIONS DASHBOARD
+  // RENDER: UNLOCKED ADMIN OPERATIONS DASHBOARD (LANDING PAGE THEME)
   // ---------------------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-[#164A41] text-white flex flex-col font-sans antialiased">
-      {/* HEADER */}
-      <header className="bg-[#0F352E] border-b-2 border-[#F1B24A] shadow-lg py-4 px-6 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center">
-              <img
-                src="/urivalent_logo.png"
-                alt="Urivalent Logo"
-                className="h-10 w-auto object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `${API_BASE_URL}/assets/urivalent_logo.png`;
-                }}
+    <div className="min-h-screen flex flex-col bg-[#FAF9F5] text-[#164A41] overflow-x-hidden selection:bg-[#F1B24A] selection:text-[#164A41]">
+      {/* ================================================================== */}
+      {/* FLOATING GLASS ISLAND NAVIGATION DOCK                              */}
+      {/* ================================================================== */}
+      <header
+        className={`fixed top-4 sm:top-5 left-0 right-0 z-50 px-4 sm:px-8 transition-all duration-700 ease-out ${
+          navVisible
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-24 opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="max-w-[1340px] mx-auto bg-[#0A1D16]/85 backdrop-blur-xl border border-white/[0.14] rounded-full px-5 sm:px-6 py-2.5 sm:py-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6)] flex items-center justify-between gap-4">
+          {/* Luminous Pearl Pod Logo */}
+          <Link href="/" className="flex items-center gap-2 group min-h-[44px]" aria-label="Urivalent Homepage">
+            <div className="bg-white/[0.94] hover:bg-white px-3.5 py-1.5 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.3)] transition-transform group-hover:scale-[1.03]">
+              <Image
+                src="/urivalent_logo.webp"
+                alt="Urivalent"
+                width={84}
+                height={28}
+                className="h-6 sm:h-7 w-auto object-contain"
+                priority
               />
-            </Link>
-            <div className="border-l border-[#9DC88D]/40 pl-3">
-              <h1 className="text-sm font-black tracking-widest uppercase text-[#F1B24A]">
-                Operations Command
-              </h1>
-              <div className="text-[10px] text-[#9DC88D] tracking-wider uppercase font-mono">
-                Pipeline Control &bull; Authenticated Console
-              </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="flex items-center gap-3 text-xs font-semibold">
-            {/* Authenticated Admin Pill */}
-            <div className="bg-[#164A41] border border-[#9DC88D] text-[#9DC88D] px-3 py-1 rounded-full flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
-              <span className="font-mono uppercase font-bold text-[11px] text-white">
-                {adminUser || "ADMIN"}
-              </span>
-            </div>
-
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 sm:gap-2 text-[11px] font-mono tracking-wider text-white/80">
             <Link
               href="/"
-              className="text-[#9DC88D] hover:text-white transition uppercase tracking-wider px-2"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
             >
-              Feed
+              Overview
             </Link>
+            <Link
+              href="/feeds"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+            >
+              Feeds
+            </Link>
+            <Link
+              href="/terms"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+            >
+              Terms
+            </Link>
+            <Link
+              href="/privacy"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+            >
+              Privacy
+            </Link>
+            <Link
+              href="/contact"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+            >
+              Contact
+            </Link>
+            <Link
+              href="/admin"
+              className="px-3 py-1.5 rounded-full text-[#F1B24A] bg-white/[0.08] font-bold"
+            >
+              Admin
+            </Link>
+          </nav>
+
+          {/* Right Action: Operator Status & Lock Button */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="hidden sm:inline-flex items-center gap-2 bg-white/[0.08] border border-white/15 px-3 py-1 rounded-full text-[10px] font-mono text-white/90">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="text-white/60">Operator:</span>
+              <span className="text-[#F1B24A] font-bold uppercase">{adminUser || "ADMIN"}</span>
+            </div>
 
             <a
               href={`${API_BASE_URL}/health`}
               target="_blank"
               rel="noreferrer"
-              className="bg-[#164A41] border border-[#9DC88D] text-white px-2.5 py-1 rounded hover:bg-[#4D774E] transition font-mono"
+              className="hidden lg:inline-flex items-center gap-1 text-[10px] font-mono text-white/70 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-2.5 py-1.5 rounded-full transition-colors"
             >
-              /health
+              <span>/health</span>
+              <span className="text-[10px]">↗</span>
             </a>
 
-            {/* Lock Console / Sign Out Button */}
             <button
               onClick={handleLock}
-              className="bg-[#F1B24A] hover:bg-[#F1B24A]/90 text-[#164A41] font-black uppercase tracking-wider px-3.5 py-1 rounded transition shadow-sm flex items-center gap-1.5"
+              className="bg-[#F1B24A] hover:bg-[#dfa23c] text-[#164A41] text-[10px] font-bold font-mono uppercase tracking-[0.16em] px-4 py-2 min-h-[40px] rounded-full transition-all shadow-sm hover:shadow-md inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+              title="Lock Console & Sign Out"
             >
-              <span>🔒 Lock</span>
+              <span>🔒</span>
+              <span>Lock</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* MAIN ADMIN CONTENT */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
-        {/* TOAST / STATUS ALERT */}
-        {message && (
-          <div
-            className={`border-2 px-5 py-3.5 rounded-lg shadow-md flex items-center justify-between transition ${
-              message.type === "success"
-                ? "bg-[#4D774E] border-[#F1B24A] text-white"
-                : "bg-red-900 border-red-500 text-white"
-            }`}
-          >
-            <div className="flex items-center gap-3 text-sm font-medium">
-              <span className="font-bold text-lg">
-                {message.type === "success" ? "✓" : "⚠"}
-              </span>
-              <span>{message.text}</span>
-            </div>
-            <button
-              onClick={() => setMessage(null)}
-              className="text-xs uppercase font-bold text-[#F1B24A] hover:underline ml-4"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
+      {/* ================================================================== */}
+      {/* 1. HERO SECTION WITH admin_page.jpeg BACKGROUND                     */}
+      {/* ================================================================== */}
+      <section className="relative min-h-[500px] sm:min-h-[560px] lg:min-h-[600px] flex flex-col justify-center pt-28 sm:pt-36 pb-12 overflow-hidden border-b border-[#164A41]/10">
+        {/* Full-width Background Image: admin_page.jpeg */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/admin_page.jpeg"
+            alt="Urivalent Sovereign Synthesis & Touch Artwork"
+            fill
+            sizes="100vw"
+            className="object-cover object-center"
+            priority
+            quality={90}
+          />
+          {/* Directional gradient overlay preserving landing page lighting & typography contrast */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0A1D16]/95 via-[#0A1D16]/80 to-[#0A1D16]/40 sm:via-[#0A1D16]/65 sm:to-black/35" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A1D16] via-transparent to-black/55" />
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT 2 COLUMNS: CONTROL PANELS */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* CONTROL PANEL 1: TEST EMAIL DISPATCH */}
-            <div className="bg-white text-[#164A41] rounded-xl p-6 sm:p-8 shadow-xl border-t-4 border-[#F1B24A]">
-              <div className="flex items-center justify-between border-b border-[#9DC88D]/40 pb-3 mb-6">
-                <div>
-                  <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-[#164A41]">
-                    Test Briefing Dispatch
-                  </h2>
-                  <p className="text-xs text-[#4D774E] mt-0.5">
-                    Instantly compiles and dispatches a live briefing strictly to your email address without affecting the subscriber dispatch state.
-                  </p>
-                </div>
-                <span className="text-[10px] bg-[#F1B24A]/20 text-[#164A41] font-bold px-2 py-1 rounded uppercase tracking-wider">
-                  Sandbox Safe
-                </span>
+        {/* Content Container */}
+        <div className="relative z-10 max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 w-full my-auto">
+          <div className="max-w-2xl">
+            {/* Main Headline — Exact match to Landing Page styling */}
+            <h1
+              className="text-4xl sm:text-6xl lg:text-[4.75rem] font-medium leading-[1.02] tracking-tight text-white mb-4 sm:mb-6 drop-shadow-md"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+            >
+              Commanding the
+              <br />
+              <span className="italic text-[#7CE5B4] font-normal">
+                Sovereign Frontier
+              </span>
+            </h1>
+
+            {/* Sub-headline */}
+            <p className="text-white/90 text-sm sm:text-base lg:text-lg font-light leading-relaxed mb-8 max-w-xl">
+              Real-time pipeline orchestration, autonomous intelligence clustering, and morning briefing delivery dispatch.
+            </p>
+
+            {/* Quick Action Button */}
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="#control-suite"
+                className="bg-[#F1B24A] hover:bg-[#dfa23c] text-[#164A41] text-[10px] sm:text-[11px] font-bold font-mono uppercase tracking-[0.16em] px-5 py-2.5 rounded-full transition-all shadow-sm hover:shadow-md inline-flex items-center gap-1.5 active:scale-95"
+              >
+                <span>Console Controls</span>
+                <span className="text-xs">↓</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================== */}
+      {/* 2. CONTROL SUITE — INTERACTIVE OPERATIONS SECTION                  */}
+      {/* ================================================================== */}
+      <section id="control-suite" className="bg-[#FAF9F5] pt-10 sm:pt-14 pb-16 sm:pb-28 border-b border-[#164A41]/10 flex-1">
+        <div className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 space-y-10">
+          {/* SNAPSHOT METRICS CARDS — PUSHED JUST ABOVE CONTROL SUITE */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#164A41]/10 shadow-[0_2px_12px_rgba(22,74,65,0.04)]">
+              <span className="text-[10px] font-mono text-[#164A41]/60 uppercase tracking-widest block mb-1">
+                Intelligence Items
+              </span>
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-[#164A41]">
+                {health?.counts.ai_intelligence_items ?? "--"}
+              </span>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#164A41]/10 shadow-[0_2px_12px_rgba(22,74,65,0.04)]">
+              <span className="text-[10px] font-mono text-[#164A41]/60 uppercase tracking-widest block mb-1">
+                Active Subscribers
+              </span>
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-[#2C5E54]">
+                {health?.counts.active_users ?? "--"}
+              </span>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#164A41]/10 shadow-[0_2px_12px_rgba(22,74,65,0.04)]">
+              <span className="text-[10px] font-mono text-[#164A41]/60 uppercase tracking-widest block mb-1">
+                Market Snapshots
+              </span>
+              <span className="text-2xl sm:text-3xl font-bold font-mono text-[#164A41]">
+                {health?.counts.compute_market_snapshots ?? "--"}
+              </span>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#164A41]/10 shadow-[0_2px_12px_rgba(22,74,65,0.04)] flex flex-col justify-between">
+              <span className="text-[10px] font-mono text-[#164A41]/60 uppercase tracking-widest block mb-1">
+                Pipeline Status
+              </span>
+              <span className="text-sm sm:text-base font-bold font-mono text-emerald-700 flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>OPERATIONAL</span>
+              </span>
+            </div>
+          </div>
+          {/* Eyebrow & Headline matching landing page style */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[#164A41]/80 text-[10px] sm:text-[11px] font-mono font-semibold uppercase tracking-[0.25em]">
+                01 &nbsp; CONTROL SUITE — PIPELINE ORCHESTRATION &amp; TELEMETRY
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-16 items-start">
+              <div className="lg:col-span-5">
+                <h2
+                  className="text-2xl sm:text-4xl lg:text-[3rem] font-medium leading-[1.08] tracking-tight text-[#164A41]"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  Autonomous pipelines,
+                  <br />
+                  <span className="italic text-[#2C5E54]">
+                    beneath direct command.
+                  </span>
+                </h2>
               </div>
 
-              <form onSubmit={handleSendTestEmail} className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-[#164A41] mb-1.5">
-                    Destination Test Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={testEmail}
-                    onChange={(e) => setTestEmail(e.target.value)}
-                    required
-                    placeholder="gathuamwangi45@gmail.com"
-                    className="w-full px-4 py-2.5 rounded-lg border-2 border-[#9DC88D] text-[#164A41] font-medium focus:border-[#F1B24A] focus:outline-none transition text-sm bg-[#F8FAF8]"
-                  />
-                  <p className="text-[11px] text-gray-500 mt-1.5">
-                    Dispatches using your live Resend API key (<code className="bg-gray-100 px-1 py-0.5 rounded font-mono">re_ExEV...</code>).
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={loadingAction === "test_email"}
-                    className="w-full sm:w-auto bg-[#F1B24A] hover:bg-[#F1B24A]/90 disabled:opacity-50 text-[#164A41] font-black uppercase tracking-wider px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition text-xs sm:text-sm flex items-center justify-center gap-2"
-                  >
-                    {loadingAction === "test_email" ? (
-                      <>
-                        <span className="h-4 w-4 border-2 border-[#164A41] border-r-transparent rounded-full animate-spin"></span>
-                        <span>Compiling & Sending...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Send Test Briefing</span>
-                        <span>&rarr;</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* CONTROL PANEL 2: MANUAL WORKFLOW TRIGGERS */}
-            <div className="bg-white text-[#164A41] rounded-xl p-6 sm:p-8 shadow-xl border-t-4 border-[#4D774E]">
-              <div className="border-b border-[#9DC88D]/40 pb-3 mb-6">
-                <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-[#164A41]">
-                  Manual Execution Triggers
-                </h2>
-                <p className="text-xs text-[#4D774E] mt-0.5">
-                  Execute individual pipeline tasks on demand outside the scheduled cron jobs. Gated by administrator JWT token.
+              <div className="lg:col-span-7 flex flex-col justify-end">
+                <p className="text-[#2C5E54] text-xs sm:text-base leading-relaxed max-w-xl">
+                  Trigger on-demand scraping cycles, compile sandbox previews, or execute full batch delivery to your subscriber base with one-click cryptographic authority.
                 </p>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Trigger Force News */}
-                <div className="border border-[#9DC88D] rounded-lg p-5 flex flex-col justify-between bg-[#F8FAF8]">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#4D774E] bg-[#9DC88D]/20 px-2 py-0.5 rounded">
-                      Scrape &amp; Cluster Only
-                    </span>
-                    <h3 className="text-sm font-bold text-[#164A41] mt-2 mb-1">
-                      Run News Ingestion Cycle
-                    </h3>
-                    <p className="text-xs text-gray-600 mb-4 leading-relaxed">
-                      Fetches all 5 streams (RSS, HN, Telegram, Market Pulse, GitHub), clusters, and updates the database without emailing.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleForceNews}
-                    disabled={loadingAction === "force_news"}
-                    className="w-full bg-[#164A41] hover:bg-[#0F352E] disabled:opacity-50 text-white font-bold uppercase tracking-wider px-4 py-2.5 rounded text-xs transition shadow-sm"
-                  >
-                    {loadingAction === "force_news" ? "Running Cycle..." : "Execute News Cycle"}
-                  </button>
-                </div>
-
-                {/* Trigger Morning Dispatch */}
-                <div className="border border-[#F1B24A] rounded-lg p-5 flex flex-col justify-between bg-[#F8FAF8]">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#164A41] bg-[#F1B24A]/30 px-2 py-0.5 rounded">
-                      Full Dispatch
-                    </span>
-                    <h3 className="text-sm font-bold text-[#164A41] mt-2 mb-1">
-                      Run Morning Delivery Cycle
-                    </h3>
-                    <p className="text-xs text-gray-600 mb-4 leading-relaxed">
-                      Executes full scraping, synthesis pass, and batches the briefing email to all active verified subscribers via Resend.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleSendMorningBrief}
-                    disabled={loadingAction === "morning_brief"}
-                    className="w-full bg-[#F1B24A] hover:bg-[#F1B24A]/90 disabled:opacity-50 text-[#164A41] font-black uppercase tracking-wider px-4 py-2.5 rounded text-xs transition shadow-sm"
-                  >
-                    {loadingAction === "morning_brief" ? "Dispatching..." : "Trigger Morning Dispatch"}
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: SYSTEM TELEMETRY */}
-          <div className="space-y-6">
-            <div className="bg-white text-[#164A41] rounded-xl p-6 shadow-xl border border-[#9DC88D]">
-              <div className="flex items-center justify-between border-b border-[#9DC88D]/40 pb-3 mb-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-[#164A41]">
-                  Live System Telemetry
-                </h3>
-                <span className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"></span>
+          {/* STATUS TOAST / ALERT NOTIFICATION */}
+          {message && (
+            <div
+              className={`p-4 sm:p-5 rounded-2xl border shadow-sm flex items-center justify-between gap-4 transition-all ${
+                message.type === "success"
+                  ? "bg-emerald-50/90 border-emerald-300 text-emerald-950"
+                  : "bg-red-50/90 border-red-300 text-red-950"
+              }`}
+            >
+              <div className="flex items-center gap-3 text-xs sm:text-sm font-medium">
+                <span className={`w-2.5 h-2.5 rounded-full ${message.type === "success" ? "bg-emerald-500" : "bg-red-500"}`} />
+                <span>{message.text}</span>
+              </div>
+              <button
+                onClick={() => setMessage(null)}
+                className="text-xs font-mono uppercase font-bold text-[#164A41] hover:underline shrink-0"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* MAIN TWO-COLUMN DASHBOARD GRID */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            {/* LEFT 7 COLS: INTERACTIVE ACTION CARDS */}
+            <div className="lg:col-span-7 space-y-8">
+              {/* CARD 1: TEST BRIEFING DISPATCH */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_4px_24px_rgba(22,74,65,0.06)] border border-[#164A41]/10 space-y-6">
+                <div className="flex items-start justify-between border-b border-[#164A41]/10 pb-4">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#F1B24A] block mb-1">
+                      SANDBOX SAFE
+                    </span>
+                    <h3
+                      className="text-xl sm:text-2xl font-medium text-[#164A41] tracking-tight"
+                      style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                    >
+                      Test Briefing Dispatch
+                    </h3>
+                    <p className="text-xs text-[#2C5E54] mt-1 leading-relaxed">
+                      Compiles and dispatches the live HTML briefing directly to a test inbox without altering subscriber dispatch flags.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSendTestEmail} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="test_email"
+                      className="block text-[11px] font-mono font-bold uppercase tracking-[0.16em] text-[#164A41]/80 mb-2 pl-1"
+                    >
+                      Destination Email
+                    </label>
+                    <input
+                      type="email"
+                      id="test_email"
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      required
+                      placeholder="Enter destination email..."
+                      className="w-full bg-[#F5F7F6] border border-gray-200 focus:border-[#164A41] focus:bg-white rounded-xl px-4 py-3 text-sm text-[#164A41] font-sans focus:outline-none transition-all placeholder:text-gray-400"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-2 font-mono">
+                      Dispatched using configured Resend delivery credentials.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={loadingAction === "test_email"}
+                      className="bg-[#0A1D16] hover:bg-[#164A41] disabled:opacity-50 text-white rounded-full py-3.5 px-6 font-semibold text-xs sm:text-sm transition-all shadow-md hover:shadow-lg active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {loadingAction === "test_email" ? (
+                        <>
+                          <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                          <span>Compiling &amp; Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Send Test Briefing</span>
+                          <span>↗</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
               </div>
 
-              <div className="space-y-3 font-mono text-xs">
-                <div className="flex justify-between py-1 border-b border-gray-100">
-                  <span className="text-gray-500">Database Engine:</span>
-                  <span className="font-bold text-[#164A41]">{health?.database.mode || "Syncing..."}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-100">
-                  <span className="text-gray-500">Intelligence Items:</span>
-                  <span className="font-bold text-[#164A41]">
-                    {health?.counts.ai_intelligence_items ?? "--"}
+              {/* CARD 2: MANUAL EXECUTION TRIGGERS */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_4px_24px_rgba(22,74,65,0.06)] border border-[#164A41]/10 space-y-6">
+                <div className="border-b border-[#164A41]/10 pb-4">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#F1B24A] block mb-1">
+                    MANUAL OVERRIDE
                   </span>
+                  <h3
+                    className="text-xl sm:text-2xl font-medium text-[#164A41] tracking-tight"
+                    style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                  >
+                    Pipeline Execution Triggers
+                  </h3>
+                  <p className="text-xs text-[#2C5E54] mt-1 leading-relaxed">
+                    Trigger individual ingestion or delivery pipeline jobs immediately outside the scheduled cron timetable.
+                  </p>
                 </div>
-                <div className="flex justify-between py-1 border-b border-gray-100">
-                  <span className="text-gray-500">Active Subscribers:</span>
-                  <span className="font-bold text-[#164A41]">
-                    {health?.counts.active_users ?? "--"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-100">
-                  <span className="text-gray-500">Market Snapshots:</span>
-                  <span className="font-bold text-[#164A41]">
-                    {health?.counts.compute_market_snapshots ?? "--"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-100">
-                  <span className="text-gray-500">GitHub Snapshots:</span>
-                  <span className="font-bold text-[#164A41]">
-                    {health?.counts.github_trending_snapshots ?? "--"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Timezone:</span>
-                  <span className="font-bold text-[#164A41]">
-                    {health?.scheduler.timezone || "Africa/Nairobi"}
-                  </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Trigger 1: Force News */}
+                  <div className="bg-[#F8FAF8] border border-[#164A41]/15 rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#164A41] bg-[#164A41]/10 px-2 py-0.5 rounded-full inline-block mb-2">
+                        Scrape &amp; Cluster
+                      </span>
+                      <h4 className="text-sm font-bold text-[#164A41] mb-1">
+                        News Ingestion Cycle
+                      </h4>
+                      <p className="text-xs text-[#2C5E54] mb-4 leading-relaxed font-light">
+                        Fetches RSS, HN, Telegram, Market Pulse, and GitHub, then synthesizes into the database without sending emails.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleForceNews}
+                      disabled={loadingAction === "force_news"}
+                      className="w-full bg-[#164A41] hover:bg-[#0A1D16] disabled:opacity-50 text-white font-mono text-[11px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-full transition-all shadow-sm active:scale-95 cursor-pointer"
+                    >
+                      {loadingAction === "force_news" ? "Running Ingestion..." : "Execute News Cycle"}
+                    </button>
+                  </div>
+
+                  {/* Trigger 2: Morning Dispatch */}
+                  <div className="bg-[#F8FAF8] border border-[#F1B24A]/40 rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#164A41] bg-[#F1B24A]/30 px-2 py-0.5 rounded-full inline-block mb-2">
+                        Full Dispatch
+                      </span>
+                      <h4 className="text-sm font-bold text-[#164A41] mb-1">
+                        Morning Briefing Batch
+                      </h4>
+                      <p className="text-xs text-[#2C5E54] mb-4 leading-relaxed font-light">
+                        Executes full scraping, synthesis pass, and batches the briefing email to all active verified subscribers.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleSendMorningBrief}
+                      disabled={loadingAction === "morning_brief"}
+                      className="w-full bg-[#F1B24A] hover:bg-[#dfa23c] disabled:opacity-50 text-[#164A41] font-mono text-[11px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-full transition-all shadow-sm active:scale-95 cursor-pointer"
+                    >
+                      {loadingAction === "morning_brief" ? "Dispatching Batch..." : "Trigger Morning Dispatch"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* TIMETABLE */}
-            <div className="bg-white text-[#164A41] rounded-xl p-6 shadow-xl border border-[#9DC88D]">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[#164A41] border-b border-[#9DC88D]/40 pb-3 mb-4">
-                Scheduler Cron Timetable
-              </h3>
+            {/* RIGHT 5 COLS: SYSTEM TELEMETRY & CRON SCHEDULES */}
+            <div id="telemetry" className="lg:col-span-5 space-y-8">
+              {/* PANEL 1: LIVE SYSTEM TELEMETRY */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_4px_24px_rgba(22,74,65,0.06)] border border-[#164A41]/10 space-y-4">
+                <div className="flex items-center justify-between border-b border-[#164A41]/10 pb-3">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#F1B24A]">
+                    INFRASTRUCTURE HEARTBEAT
+                  </span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
 
-              <div className="space-y-3 text-xs">
-                {health?.scheduler.jobs && health.scheduler.jobs.length > 0 ? (
-                  health.scheduler.jobs.map((job) => (
-                    <div key={job.id} className="border-l-2 border-[#F1B24A] pl-3">
-                      <div className="font-bold text-[#164A41]">{job.name}</div>
-                      <div className="text-[11px] text-gray-500 font-mono mt-0.5">
-                        Next: {job.next_run_time ? job.next_run_time.slice(0, 19).replace("T", " ") : "Active"}
+                <div className="space-y-3 font-mono text-xs">
+                  <div className="flex justify-between py-1.5 border-b border-gray-100">
+                    <span className="text-gray-500">Database Engine:</span>
+                    <span className="font-bold text-[#164A41]">
+                      {health?.database.mode || "Syncing..."}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-gray-100">
+                    <span className="text-gray-500">Intelligence Items:</span>
+                    <span className="font-bold text-[#164A41]">
+                      {health?.counts.ai_intelligence_items ?? "--"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-gray-100">
+                    <span className="text-gray-500">Active Subscribers:</span>
+                    <span className="font-bold text-[#164A41]">
+                      {health?.counts.active_users ?? "--"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-gray-100">
+                    <span className="text-gray-500">Market Snapshots:</span>
+                    <span className="font-bold text-[#164A41]">
+                      {health?.counts.compute_market_snapshots ?? "--"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5 border-b border-gray-100">
+                    <span className="text-gray-500">GitHub Snapshots:</span>
+                    <span className="font-bold text-[#164A41]">
+                      {health?.counts.github_trending_snapshots ?? "--"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1.5">
+                    <span className="text-gray-500">Scheduler Timezone:</span>
+                    <span className="font-bold text-[#164A41]">
+                      {health?.scheduler.timezone || "Africa/Nairobi"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* PANEL 2: SCHEDULER CRON TIMETABLE */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_4px_24px_rgba(22,74,65,0.06)] border border-[#164A41]/10 space-y-4">
+                <div className="border-b border-[#164A41]/10 pb-3">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#F1B24A] block mb-1">
+                    AUTOMATED CRON
+                  </span>
+                  <h4
+                    className="text-lg font-medium text-[#164A41]"
+                    style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                  >
+                    Scheduler Timetable
+                  </h4>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  {health?.scheduler.jobs && health.scheduler.jobs.length > 0 ? (
+                    health.scheduler.jobs.map((job) => (
+                      <div
+                        key={job.id}
+                        className="border-l-2 border-[#F1B24A] pl-3 py-1 bg-[#FAF9F5] rounded-r-xl"
+                      >
+                        <div className="font-bold text-[#164A41]">{job.name}</div>
+                        <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+                          Next: {job.next_run_time ? job.next_run_time.slice(0, 19).replace("T", " ") : "Active"}
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-xs text-gray-400 font-mono py-2">
+                      Loading cron timetable...
                     </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-gray-400">Loading cron timetable...</div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </main>
+      </section>
 
-      {/* FOOTER */}
-      <footer className="bg-[#0F352E] border-t border-[#9DC88D]/30 py-4 px-6 text-center text-xs text-[#9DC88D]/70 mt-auto">
-        Urivalent Operations Command &bull; Decoupled Next.js + FastAPI Pure Architecture
+      {/* ================================================================== */}
+      {/* FOOTER — MATCHING LANDING PAGE                                     */}
+      {/* ================================================================== */}
+      <footer className="bg-[#0C241C] border-t border-[#9DC88D]/15 pt-10 sm:pt-14 pb-8 px-6 sm:px-10 lg:px-16 text-white mt-auto">
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start">
+          {/* Column 1: Brand & Identity (4 cols) */}
+          <div className="md:col-span-4 space-y-3">
+            <Link href="/" className="inline-block group" aria-label="Urivalent Homepage">
+              <div className="bg-white/[0.94] hover:bg-white px-3.5 py-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.25)] transition-all group-hover:scale-[1.03] inline-block">
+                <Image
+                  src="/urivalent_logo.webp"
+                  alt="Urivalent"
+                  width={78}
+                  height={26}
+                  className="h-5 sm:h-5.5 w-auto object-contain"
+                />
+              </div>
+            </Link>
+            <p className="text-[11px] text-white/60 leading-relaxed max-w-sm font-light">
+              Autonomously tracking frontier models, silicon architecture, sovereign compute infrastructure, agent tooling, and capital markets.
+            </p>
+            <div className="text-[10px] font-mono text-white/40 pt-1">
+              &copy; {new Date().getFullYear()} Urivalent. All rights reserved.
+            </div>
+          </div>
+
+          {/* Column 2: Redirect Links rearranged into a list (3 cols) */}
+          <div className="md:col-span-3">
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#F1B24A] font-semibold block mb-3">
+              NAVIGATION
+            </span>
+            <ul className="space-y-2 text-xs font-mono text-white/80">
+              <li>
+                <Link href="/" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                  <span className="text-white/30 text-[10px]">›</span>
+                  <span>Overview</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/feeds" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                  <span className="text-white/30 text-[10px]">›</span>
+                  <span>Live Feeds</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                  <span className="text-white/30 text-[10px]">›</span>
+                  <span>Terms &amp; Conditions</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                  <span className="text-white/30 text-[10px]">›</span>
+                  <span>Privacy Policy</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                  <span className="text-white/30 text-[10px]">›</span>
+                  <span>Contact Desk</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin" className="text-[#F1B24A] hover:underline font-bold inline-flex items-center gap-1.5">
+                  <span className="text-[#F1B24A]/50 text-[10px]">›</span>
+                  <span>Admin Console ↗</span>
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Subscribe form just beside the redirect links (5 cols) */}
+          <div className="md:col-span-5 space-y-2.5">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
+              <span className="text-[#F1B24A] text-[9px] font-mono font-semibold uppercase tracking-[0.2em]">
+                DISPATCH BRIEFING
+              </span>
+            </div>
+            <h4
+              className="text-base sm:text-lg font-medium tracking-tight text-white"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+            >
+              Subscribe to Sovereign Signals
+            </h4>
+            <p className="text-[11px] text-white/65 font-light leading-relaxed max-w-md">
+              Daily synthesized intelligence on frontier AI models, silicon bottlenecks, and sovereign compute infrastructure.
+            </p>
+            <div className="pt-1 max-w-md">
+              <SubscribeForm />
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );
