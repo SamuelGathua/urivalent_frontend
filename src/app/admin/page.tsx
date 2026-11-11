@@ -200,6 +200,8 @@ export default function AdminPortal() {
   const [subscribersLoading, setSubscribersLoading] = useState<boolean>(false);
   const [subscribersError, setSubscribersError] = useState<string | null>(null);
   const [subscriberSearch, setSubscriberSearch] = useState<string>("");
+  const [subscriberSortField, setSubscriberSortField] = useState<"id" | "email">("id");
+  const [subscriberSortDir, setSubscriberSortDir] = useState<"asc" | "desc">("desc");
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<SubscriberUser | null>(null);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
@@ -659,14 +661,28 @@ export default function AdminPortal() {
     }
   }
 
-  // Filtered subscribers list for search query
-  const filteredSubscribers = subscribers.filter((sub) => {
-    if (!subscriberSearch.trim()) return true;
-    const query = subscriberSearch.toLowerCase();
-    const emailMatch = sub.email?.toLowerCase().includes(query);
-    const userMatch = sub.username?.toLowerCase().includes(query);
-    return Boolean(emailMatch || userMatch);
-  });
+  // Filtered and sorted subscribers list
+  const filteredSubscribers = subscribers
+    .filter((sub) => {
+      if (!subscriberSearch.trim()) return true;
+      const query = subscriberSearch.toLowerCase();
+      const emailMatch = sub.email?.toLowerCase().includes(query);
+      const userMatch = sub.username?.toLowerCase().includes(query);
+      return Boolean(emailMatch || userMatch);
+    })
+    .sort((a, b) => {
+      if (subscriberSortField === "id") {
+        const idA = a.id ?? 0;
+        const idB = b.id ?? 0;
+        return subscriberSortDir === "asc" ? idA - idB : idB - idA;
+      } else {
+        const emailA = (a.email || "").toLowerCase();
+        const emailB = (b.email || "").toLowerCase();
+        return subscriberSortDir === "asc"
+          ? emailA.localeCompare(emailB)
+          : emailB.localeCompare(emailA);
+      }
+    });
 
   // ---------------------------------------------------------------------------
   // RENDER: LOADING CHECK
@@ -1526,12 +1542,6 @@ export default function AdminPortal() {
             {/* Header and Controls */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[#F1B24A] text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-[0.25em]">
-                    02 &nbsp; DATABASE REGISTRY — SUBSCRIBERS DIRECTORY
-                  </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                </div>
                 <h3
                   className="text-2xl sm:text-3xl font-medium tracking-tight text-white drop-shadow-sm"
                   style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
@@ -1543,7 +1553,7 @@ export default function AdminPortal() {
                 </p>
               </div>
 
-              {/* Action Toolbar: Search + Refresh + Total Count */}
+              {/* Action Toolbar: Search + Total Count */}
               <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
                 {/* Search Bar */}
                 <div className="relative min-w-[220px] sm:min-w-[260px]">
@@ -1574,17 +1584,6 @@ export default function AdminPortal() {
                   <span className="font-bold text-[#F1B24A]">{subscribers.length}</span>
                   <span className="text-white/70 text-[10px] uppercase tracking-wider">Subscribers</span>
                 </div>
-
-                {/* Refresh Database Button */}
-                <button
-                  onClick={() => fetchUsers()}
-                  disabled={subscribersLoading}
-                  className="bg-[#F1B24A] hover:bg-[#dfa23c] active:scale-95 text-[#164A41] px-4 py-2 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  title="Reload subscriber list directly from database"
-                >
-                  <span className={`text-xs ${subscribersLoading ? "animate-spin" : ""}`}>🔄</span>
-                  <span>{subscribersLoading ? "Syncing..." : "Sync DB"}</span>
-                </button>
               </div>
             </div>
 
@@ -1610,8 +1609,44 @@ export default function AdminPortal() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#081812] border-b border-[#9DC88D]/20 text-[10px] font-mono font-bold uppercase tracking-[0.18em] text-[#F1B24A]">
-                      <th className="py-3.5 sm:py-4 px-4 sm:px-6 w-14"># ID</th>
-                      <th className="py-3.5 sm:py-4 px-4 sm:px-6">Subscriber Email</th>
+                      <th
+                        onClick={() => {
+                          if (subscriberSortField === "id") {
+                            setSubscriberSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+                          } else {
+                            setSubscriberSortField("id");
+                            setSubscriberSortDir("desc");
+                          }
+                        }}
+                        className="py-3.5 sm:py-4 px-4 sm:px-6 w-24 cursor-pointer select-none hover:text-white transition-colors group"
+                        title="Click to sort by ID"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span># ID</span>
+                          <span className="text-[11px] text-[#9DC88D] group-hover:text-white transition-colors">
+                            {subscriberSortField === "id" ? (subscriberSortDir === "asc" ? "▲" : "▼") : "⇅"}
+                          </span>
+                        </div>
+                      </th>
+                      <th
+                        onClick={() => {
+                          if (subscriberSortField === "email") {
+                            setSubscriberSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+                          } else {
+                            setSubscriberSortField("email");
+                            setSubscriberSortDir("asc");
+                          }
+                        }}
+                        className="py-3.5 sm:py-4 px-4 sm:px-6 cursor-pointer select-none hover:text-white transition-colors group"
+                        title="Click to sort by Subscriber Email"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>Subscriber Email</span>
+                          <span className="text-[11px] text-[#9DC88D] group-hover:text-white transition-colors">
+                            {subscriberSortField === "email" ? (subscriberSortDir === "asc" ? "▲" : "▼") : "⇅"}
+                          </span>
+                        </div>
+                      </th>
                       <th className="py-3.5 sm:py-4 px-4 sm:px-6">Day Subscribed</th>
                       <th className="py-3.5 sm:py-4 px-4 sm:px-6 text-center">Status</th>
                       <th className="py-3.5 sm:py-4 px-4 sm:px-6 text-right">Master Command</th>
@@ -1724,24 +1759,32 @@ export default function AdminPortal() {
                               )}
                             </td>
 
-                            {/* Column 5: Master Command Action Button */}
+                            {/* Column 5: Master Command Action Button (Bin Icon) */}
                             <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
                               <button
                                 onClick={() => setConfirmDeleteUser(user)}
                                 disabled={isDeletingThis}
-                                className="inline-flex items-center gap-1.5 bg-rose-500/15 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/35 hover:border-rose-600 disabled:opacity-50 px-3.5 py-1.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow active:scale-95 cursor-pointer ml-auto"
-                                title="Irreversibly delete subscriber details & master unsubscribe"
+                                className="inline-flex items-center justify-center p-2 rounded-xl bg-rose-500/15 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/35 hover:border-rose-600 disabled:opacity-50 transition-all shadow-sm hover:shadow active:scale-95 cursor-pointer ml-auto"
+                                title="Delete subscriber"
+                                aria-label="Delete subscriber"
                               >
                                 {isDeletingThis ? (
-                                  <>
-                                    <span className="h-3 w-3 border-2 border-rose-300 border-t-transparent rounded-full animate-spin"></span>
-                                    <span>Unsubscribing...</span>
-                                  </>
+                                  <span className="h-4 w-4 border-2 border-rose-300 border-t-transparent rounded-full animate-spin"></span>
                                 ) : (
-                                  <>
-                                    <span>✕</span>
-                                    <span>Master Unsubscribe</span>
-                                  </>
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={1.8}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
                                 )}
                               </button>
                             </td>
