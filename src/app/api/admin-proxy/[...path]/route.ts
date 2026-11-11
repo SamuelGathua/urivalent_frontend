@@ -20,7 +20,7 @@ async function handleProxy(
   const headers = new Headers();
   req.headers.forEach((value, key) => {
     const lower = key.toLowerCase();
-    if (['authorization', 'content-type', 'accept'].includes(lower)) {
+    if (['authorization', 'content-type', 'accept', 'x-admin-key'].includes(lower)) {
       headers.set(key, value);
     }
   });
@@ -54,4 +54,7 @@ async function handleProxy(
 
 export const GET = handleProxy;
 export const POST = handleProxy;
+export const DELETE = handleProxy;
+export const PUT = handleProxy;
+export const PATCH = handleProxy;
 

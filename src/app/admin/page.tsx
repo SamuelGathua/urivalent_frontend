@@ -29,22 +29,85 @@ interface SystemHealth {
   };
 }
 
+export interface SubscriberUser {
+  id: number;
+  email: string;
+  username?: string | null;
+  is_active?: number;
+  is_verified?: number;
+  is_subscribed?: number;
+  created_at?: string | null;
+}
+
+function formatSubscribedDate(dateString?: string | null): { date: string; time: string; relative: string } {
+  if (!dateString) {
+    return { date: "Date unavailable", time: "", relative: "" };
+  }
+  try {
+    const normalized = dateString.includes("T")
+      ? dateString
+      : dateString.replace(" ", "T") + (dateString.endsWith("Z") ? "" : "Z");
+    const d = new Date(normalized);
+
+    if (isNaN(d.getTime())) {
+      return { date: dateString.slice(0, 10), time: dateString.slice(11, 19), relative: "" };
+    }
+
+    const date = d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+    const time = d.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "UTC",
+    }) + " UTC";
+
+    const diffDays = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+    let relative = "";
+    if (diffDays === 0) relative = "Today";
+    else if (diffDays === 1) relative = "Yesterday";
+    else if (diffDays > 1) relative = `${diffDays}d ago`;
+
+    return { date, time, relative };
+  } catch {
+    return { date: String(dateString).slice(0, 10), time: "", relative: "" };
+  }
+}
+
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "https://api.urivalent.tech").replace(/\/$/, "");
 
 /**
  * Resilient Admin API Dispatcher:
  * Attempts direct call to cloud API first; automatically falls back to same-origin
  * Edge proxy (/api/admin-proxy/...) if browser encounters CORS blocks or network errors.
+ * Also gracefully falls back to direct Next.js Edge route for database subscribers.
  */
 async function callAdminApi(endpoint: string, options: RequestInit = {}): Promise<Response> {
   try {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    if (!res.ok && (res.status >= 500 || res.status === 404) && endpoint.includes('/admin/users')) {
+      throw new Error(`Direct API returned status ${res.status}`);
+    }
     return res;
   } catch (directErr) {
     try {
       const res = await fetch(`/api/admin-proxy${endpoint}`, options);
+      if (res.status === 502 && endpoint.includes('/admin/users')) {
+        return await fetch(`/api${endpoint}`, options);
+      }
       return res;
     } catch {
+      if (endpoint.includes('/admin/users')) {
+        try {
+          return await fetch(`/api${endpoint}`, options);
+        } catch {
+          throw directErr;
+        }
+      }
       throw directErr;
     }
   }
@@ -132,6 +195,15 @@ export default function AdminPortal() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [health, setHealth] = useState<SystemHealth | null>(null);
 
+  // Subscribers Directory State
+  const [subscribers, setSubscribers] = useState<SubscriberUser[]>([]);
+  const [subscribersLoading, setSubscribersLoading] = useState<boolean>(false);
+  const [subscribersError, setSubscribersError] = useState<string | null>(null);
+  const [subscriberSearch, setSubscriberSearch] = useState<string>("");
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<SubscriberUser | null>(null);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+
   // Floating navbar state
   const [navVisible, setNavVisible] = useState<boolean>(true);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
@@ -177,6 +249,7 @@ export default function AdminPortal() {
           setAdminUser(data.username || savedUser || "admin");
           setIsAuthenticated(true);
           fetchHealth();
+          fetchUsers();
         } else {
           // Token expired or invalid
           localStorage.removeItem("urivalent_admin_token");
@@ -192,6 +265,7 @@ export default function AdminPortal() {
     }
 
     verifyExistingSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 2. Fetch live system health
@@ -251,6 +325,7 @@ export default function AdminPortal() {
 
         setLoginPasscode("");
         fetchHealth();
+        fetchUsers();
       } else {
         const nextFailed = failedTrials + 1;
         setFailedTrials(nextFailed);
@@ -425,6 +500,96 @@ export default function AdminPortal() {
       fetchHealth();
     }
   }
+
+  // 8. Fetch Subscriber Records Directly From Database
+  async function fetchUsers() {
+    setSubscribersLoading(true);
+    setSubscribersError(null);
+    try {
+      const res = await callAdminApi("/admin/users", {
+        headers: getAuthHeaders(),
+      });
+
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.users)) {
+        setSubscribers(data.users);
+      } else {
+        setSubscribersError(data.detail || data.error || "Failed to retrieve subscriber registry from database.");
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setSubscribersError(`Database telemetry offline: ${errorMsg}`);
+    } finally {
+      setSubscribersLoading(false);
+    }
+  }
+
+  // 9. Master Unsubscribe / Delete Subscriber Command Handler
+  async function handleMasterUnsubscribe(user: SubscriberUser) {
+    setDeletingUserId(user.id);
+    setMessage(null);
+
+    try {
+      const res = await callAdminApi(`/admin/users/${user.id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        setMessage({
+          type: "success",
+          text: data.message || `Subscriber ${user.email} permanently removed and master-unsubscribed from database.`,
+        });
+        // Optimistically remove from local state
+        setSubscribers((prev) => prev.filter((item) => item.id !== user.id));
+        setConfirmDeleteUser(null);
+        // Refresh health and subscriber counts
+        fetchHealth();
+      } else {
+        setMessage({
+          type: "error",
+          text: data.detail || data.error || `Failed to delete subscriber ${user.email}.`,
+        });
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setMessage({
+        type: "error",
+        text: `Error during subscriber deletion: ${errorMsg}`,
+      });
+    } finally {
+      setDeletingUserId(null);
+    }
+  }
+
+  function copyToClipboard(email: string) {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(email);
+      setCopiedEmail(email);
+      setTimeout(() => setCopiedEmail(null), 2000);
+    }
+  }
+
+  // Filtered subscribers list for search query
+  const filteredSubscribers = subscribers.filter((sub) => {
+    if (!subscriberSearch.trim()) return true;
+    const query = subscriberSearch.toLowerCase();
+    const emailMatch = sub.email?.toLowerCase().includes(query);
+    const userMatch = sub.username?.toLowerCase().includes(query);
+    return Boolean(emailMatch || userMatch);
+  });
 
   // ---------------------------------------------------------------------------
   // RENDER: LOADING CHECK
@@ -1011,7 +1176,7 @@ export default function AdminPortal() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-16 items-start">
-              <div className="lg:col-span-5">
+              <div className="lg:col-span-12">
                 <h2
                   className="text-2xl sm:text-4xl lg:text-[3rem] font-medium leading-[1.08] tracking-tight text-[#164A41]"
                   style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
@@ -1022,12 +1187,6 @@ export default function AdminPortal() {
                     beneath direct command.
                   </span>
                 </h2>
-              </div>
-
-              <div className="lg:col-span-7 flex flex-col justify-end">
-                <p className="text-[#2C5E54] text-xs sm:text-base leading-relaxed max-w-xl">
-                  Trigger on-demand scraping cycles, compile sandbox previews, or execute full batch delivery to your subscriber base with one-click cryptographic authority.
-                </p>
               </div>
             </div>
           </div>
@@ -1275,6 +1434,257 @@ export default function AdminPortal() {
               </div>
             </div>
           </div>
+
+          {/* ================================================================== */}
+          {/* 3. SUBSCRIBER INTELLIGENCE & ACCESS REGISTRY TABLE                 */}
+          {/* ================================================================== */}
+          <div
+            id="subscribers-registry"
+            className="bg-[#164A41] rounded-3xl p-6 sm:p-10 shadow-[0_12px_40px_rgba(22,74,65,0.28)] border border-[#9DC88D]/25 space-y-6 text-white"
+          >
+            {/* Header and Controls */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[#F1B24A] text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-[0.25em]">
+                    02 &nbsp; DATABASE REGISTRY — SUBSCRIBERS DIRECTORY
+                  </span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                </div>
+                <h3
+                  className="text-2xl sm:text-3xl font-medium tracking-tight text-white drop-shadow-sm"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  Subscriber Telemetry &amp; Access Controls
+                </h3>
+                <p className="text-xs text-white/80 mt-1.5 max-w-2xl leading-relaxed font-light">
+                  Direct database extraction of all active intelligence subscribers. Master Administrative Controls allow immediate subscriber deletion and irreversible termination of daily dispatch pipelines.
+                </p>
+              </div>
+
+              {/* Action Toolbar: Search + Refresh + Total Count */}
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+                {/* Search Bar */}
+                <div className="relative min-w-[220px] sm:min-w-[260px]">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/50 text-xs">
+                    🔍
+                  </span>
+                  <input
+                    type="text"
+                    value={subscriberSearch}
+                    onChange={(e) => setSubscriberSearch(e.target.value)}
+                    placeholder="Search by email..."
+                    className="w-full bg-[#0A1D16]/80 border border-[#9DC88D]/30 focus:border-[#F1B24A] rounded-full pl-9 pr-8 py-2 text-xs text-white font-mono focus:outline-none transition-all placeholder:text-white/45 shadow-sm"
+                  />
+                  {subscriberSearch && (
+                    <button
+                      onClick={() => setSubscriberSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white text-xs cursor-pointer"
+                      title="Clear search"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Live Count Pill */}
+                <div className="bg-[#0A1D16]/80 border border-[#9DC88D]/30 px-3.5 py-2 rounded-full text-[11px] font-mono text-white shadow-sm flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span className="font-bold text-[#F1B24A]">{subscribers.length}</span>
+                  <span className="text-white/70 text-[10px] uppercase tracking-wider">Subscribers</span>
+                </div>
+
+                {/* Refresh Database Button */}
+                <button
+                  onClick={fetchUsers}
+                  disabled={subscribersLoading}
+                  className="bg-[#F1B24A] hover:bg-[#dfa23c] active:scale-95 text-[#164A41] px-4 py-2 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="Reload subscriber list directly from database"
+                >
+                  <span className={`text-xs ${subscribersLoading ? "animate-spin" : ""}`}>🔄</span>
+                  <span>{subscribersLoading ? "Syncing..." : "Sync DB"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Error Message if Fetch Failed */}
+            {subscribersError && (
+              <div className="bg-amber-500/15 border border-amber-400/40 text-amber-200 p-4 rounded-2xl text-xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 font-mono">
+                  <span>⚠️</span>
+                  <span>{subscribersError}</span>
+                </div>
+                <button
+                  onClick={fetchUsers}
+                  className="underline font-bold text-[#F1B24A] hover:text-white uppercase text-[10px] font-mono cursor-pointer shrink-0"
+                >
+                  Retry Query
+                </button>
+              </div>
+            )}
+
+            {/* SUBSCRIBERS TABLE CONTAINER */}
+            <div className="bg-[#0A1D16] rounded-2xl shadow-2xl border border-[#9DC88D]/25 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#081812] border-b border-[#9DC88D]/20 text-[10px] font-mono font-bold uppercase tracking-[0.18em] text-[#F1B24A]">
+                      <th className="py-3.5 sm:py-4 px-4 sm:px-6 w-14"># ID</th>
+                      <th className="py-3.5 sm:py-4 px-4 sm:px-6">Subscriber Email</th>
+                      <th className="py-3.5 sm:py-4 px-4 sm:px-6">Day Subscribed</th>
+                      <th className="py-3.5 sm:py-4 px-4 sm:px-6 text-center">Status</th>
+                      <th className="py-3.5 sm:py-4 px-4 sm:px-6 text-right">Master Command</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 font-sans text-xs sm:text-sm">
+                    {subscribersLoading && subscribers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <div className="flex flex-col items-center justify-center gap-3">
+                            <div className="h-7 w-7 border-3 border-[#F1B24A] border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-xs font-mono text-[#9DC88D] uppercase tracking-wider">
+                              Reading Subscriber Records from Database...
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredSubscribers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <div className="max-w-sm mx-auto text-center space-y-2">
+                            <div className="text-2xl">📬</div>
+                            <p className="font-bold text-white text-sm">
+                              {subscriberSearch ? "No matching subscribers found" : "No subscribers recorded in database"}
+                            </p>
+                            <p className="text-xs text-white/60 font-light">
+                              {subscriberSearch
+                                ? `No subscriber email matches "${subscriberSearch}". Try a different search term.`
+                                : "Subscribers who submit their email on the public portal will appear here in real-time."}
+                            </p>
+                            {subscriberSearch && (
+                              <button
+                                onClick={() => setSubscriberSearch("")}
+                                className="text-xs font-mono text-[#F1B24A] hover:underline font-bold pt-1 cursor-pointer"
+                              >
+                                Clear search query
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredSubscribers.map((user, idx) => {
+                        const dateInfo = formatSubscribedDate(user.created_at);
+                        const isSubscribed = user.is_subscribed === 1 || user.is_subscribed === undefined;
+                        const isDeletingThis = deletingUserId === user.id;
+
+                        return (
+                          <tr
+                            key={user.id || idx}
+                            className="hover:bg-[#164A41]/40 transition-colors group"
+                          >
+                            {/* Column 1: Record ID */}
+                            <td className="py-4 px-4 sm:px-6 font-mono text-xs text-[#9DC88D]/70 font-medium whitespace-nowrap">
+                              #{user.id}
+                            </td>
+
+                            {/* Column 2: Subscriber Email & Username */}
+                            <td className="py-4 px-4 sm:px-6">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono font-bold text-white text-xs sm:text-sm tracking-tight">
+                                  {user.email}
+                                </span>
+                                <button
+                                  onClick={() => copyToClipboard(user.email)}
+                                  className="text-[10px] font-mono text-white/50 hover:text-white p-1 rounded hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                                  title="Copy email address"
+                                >
+                                  {copiedEmail === user.email ? "✓ Copied" : "📋"}
+                                </button>
+                              </div>
+                              {user.username && user.username !== user.email.split("@")[0] && (
+                                <div className="text-[11px] text-[#9DC88D]/70 font-mono mt-0.5">
+                                  User handle: @{user.username}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Column 3: Day Subscribed */}
+                            <td className="py-4 px-4 sm:px-6 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-white">
+                                  {dateInfo.date}
+                                </span>
+                                {dateInfo.relative && (
+                                  <span className="text-[10px] font-mono bg-[#164A41] text-[#9DC88D] border border-[#9DC88D]/30 px-2 py-0.5 rounded-full font-semibold">
+                                    {dateInfo.relative}
+                                  </span>
+                                )}
+                              </div>
+                              {dateInfo.time && (
+                                <div className="text-[11px] font-mono text-white/45 mt-0.5">
+                                  {dateInfo.time}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Column 4: Subscription Status */}
+                            <td className="py-4 px-4 sm:px-6 text-center whitespace-nowrap">
+                              {isSubscribed ? (
+                                <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                  <span>Subscribed</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                  <span>Unsubscribed</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Column 5: Master Command Action Button */}
+                            <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
+                              <button
+                                onClick={() => setConfirmDeleteUser(user)}
+                                disabled={isDeletingThis}
+                                className="inline-flex items-center gap-1.5 bg-rose-500/15 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/35 hover:border-rose-600 disabled:opacity-50 px-3.5 py-1.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow active:scale-95 cursor-pointer ml-auto"
+                                title="Irreversibly delete subscriber details & master unsubscribe"
+                              >
+                                {isDeletingThis ? (
+                                  <>
+                                    <span className="h-3 w-3 border-2 border-rose-300 border-t-transparent rounded-full animate-spin"></span>
+                                    <span>Unsubscribing...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>✕</span>
+                                    <span>Master Unsubscribe</span>
+                                  </>
+                                )}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Table Footer Summary */}
+              <div className="bg-[#081812] border-t border-[#9DC88D]/20 px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-[#9DC88D]/70">
+                <div className="flex items-center gap-2">
+                  <span>Source: Institutional Database (users table)</span>
+                  <span>•</span>
+                  <span>{filteredSubscribers.length} of {subscribers.length} shown</span>
+                </div>
+                <div className="text-[11px] text-white/40">
+                  Deletion executes permanent unsubscription &amp; database cascade purge.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1372,6 +1782,73 @@ export default function AdminPortal() {
           </div>
         </div>
       </footer>
+
+      {/* ================================================================== */}
+      {/* MASTER UNSUBSCRIBE CONFIRMATION MODAL                              */}
+      {/* ================================================================== */}
+      {confirmDeleteUser && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-rose-200 text-[#164A41] space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center text-lg font-bold shrink-0">
+                ⚠️
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-rose-600 block">
+                  CRITICAL ADMINISTRATIVE COMMAND
+                </span>
+                <h4
+                  className="text-lg sm:text-xl font-bold text-[#164A41] tracking-tight"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  Confirm Master Unsubscribe
+                </h4>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs sm:text-sm text-[#2C5E54] leading-relaxed bg-[#F8FAF8] border border-gray-200/80 p-4 rounded-2xl">
+              <p>
+                You are about to irreversibly purge all subscription credentials and database records for:
+              </p>
+              <div className="p-2.5 bg-white border border-[#164A41]/10 rounded-xl font-mono text-xs font-bold text-[#164A41] break-all">
+                {confirmDeleteUser.email}
+              </div>
+              <p className="text-[11px] text-gray-500 font-light">
+                This subscriber will immediately cease receiving daily morning intelligence briefings. Both the user account and subscriber tracking row will be deleted from the database.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteUser(null)}
+                disabled={deletingUserId !== null}
+                className="px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-100 text-xs font-mono font-semibold text-gray-700 uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMasterUnsubscribe(confirmDeleteUser)}
+                disabled={deletingUserId !== null}
+                className="px-5 py-2 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {deletingUserId === confirmDeleteUser.id ? (
+                  <>
+                    <span className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span>Purging...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Confirm Unsubscribe</span>
+                    <span>🗑️</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

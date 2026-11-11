@@ -70,4 +70,71 @@ export const db = {
       [email, username]
     );
   },
+
+  /**
+   * Query records from Cloudflare D1 returning array of rows.
+   */
+  async query<T = Record<string, unknown>>(
+    query: string,
+    params: (string | number | boolean | null)[] = []
+  ): Promise<T[]> {
+    const accountId = process.env.CF_ACCOUNT_ID?.trim();
+    const dbId = process.env.CF_D1_DATABASE_ID?.trim();
+    const token = process.env.CF_API_TOKEN?.trim();
+
+    if (!accountId || !dbId || !token) {
+      console.warn('[db] Cloudflare D1 credentials missing. Simulation mode.');
+      return [];
+    }
+
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sql: query,
+          params: params,
+        }),
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) {
+      throw new Error(`D1 query error: ${JSON.stringify(data.errors || data)}`);
+    }
+
+    return (data.result?.[0]?.results as T[]) || [];
+  },
+
+  /**
+   * Helper function to fetch all user and subscriber records directly from the database.
+   */
+  async getUsers(): Promise<Record<string, unknown>[]> {
+    return this.query<Record<string, unknown>>(
+      'SELECT id, username, email, is_active, is_verified, is_subscribed, created_at FROM users ORDER BY id DESC;'
+    );
+  },
+
+  /**
+   * Helper function to permanently remove a subscriber from both users and subscribers tables.
+   */
+  async deleteSubscriber(idOrEmail: number | string): Promise<void> {
+    if (typeof idOrEmail === 'number') {
+      const rows = await this.query<{ email: string }>(
+        'SELECT email FROM users WHERE id = ?1;',
+        [idOrEmail]
+      );
+      await this.execute('DELETE FROM users WHERE id = ?1;', [idOrEmail]);
+      if (rows.length > 0 && rows[0]?.email) {
+        await this.execute('DELETE FROM subscribers WHERE email = ?1;', [rows[0].email]);
+      }
+    } else {
+      await this.execute('DELETE FROM users WHERE email = ?1;', [idOrEmail]);
+      await this.execute('DELETE FROM subscribers WHERE email = ?1;', [idOrEmail]);
+    }
+  },
 };
