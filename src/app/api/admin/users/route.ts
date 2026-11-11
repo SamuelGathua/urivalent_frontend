@@ -29,11 +29,20 @@ export async function GET(req: NextRequest) {
 
   try {
     const users = await db.getUsers();
-    return NextResponse.json({
-      status: 'success',
-      count: users.length,
-      users,
-    });
+    return NextResponse.json(
+      {
+        status: 'success',
+        count: users.length,
+        users,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: `Failed to fetch users: ${message}` }, { status: 500 });

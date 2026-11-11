@@ -63,8 +63,8 @@ function formatSubscribedDate(dateString?: string | null): { date: string; time:
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
-      timeZone: "UTC",
-    }) + " UTC";
+      timeZone: "Africa/Nairobi",
+    }) + " EAT";
 
     const diffDays = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
     let relative = "";
@@ -267,6 +267,31 @@ export default function AdminPortal() {
     verifyExistingSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 1b. Real-time Database Polling & Focus Synchronization
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Background live check every 5 seconds for immediate real-time sync
+    const pollTimer = setInterval(() => {
+      fetchUsers(true);
+    }, 5000);
+
+    const handleFocusSync = () => {
+      fetchUsers(true);
+      fetchHealth();
+    };
+
+    window.addEventListener("focus", handleFocusSync);
+    document.addEventListener("visibilitychange", handleFocusSync);
+
+    return () => {
+      clearInterval(pollTimer);
+      window.removeEventListener("focus", handleFocusSync);
+      document.removeEventListener("visibilitychange", handleFocusSync);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   // 2. Fetch live system health
   async function fetchHealth() {
@@ -501,14 +526,32 @@ export default function AdminPortal() {
     }
   }
 
-  // 8. Fetch Subscriber Records Directly From Database
-  async function fetchUsers() {
-    setSubscribersLoading(true);
+  // 8. Fetch Subscriber Records Directly From Database (Live Cloudflare D1 with automatic instant sync)
+  async function fetchUsers(silent = false) {
+    if (!silent) {
+      setSubscribersLoading(true);
+    }
     setSubscribersError(null);
     try {
-      const res = await callAdminApi("/admin/users", {
-        headers: getAuthHeaders(),
-      });
+      const timestamp = Date.now();
+      let res: Response;
+
+      // 1. Direct Edge call to Cloudflare D1 (source of truth) with no-store cache
+      try {
+        res = await fetch(`/api/admin/users?_t=${timestamp}`, {
+          headers: getAuthHeaders(),
+          cache: "no-store",
+        });
+        if (!res.ok && res.status !== 401) {
+          throw new Error(`Direct Edge DB returned ${res.status}`);
+        }
+      } catch {
+        // Fallback to API dispatcher
+        res = await callAdminApi(`/admin/users?_t=${timestamp}`, {
+          headers: getAuthHeaders(),
+          cache: "no-store",
+        });
+      }
 
       if (res.status === 401) {
         handleUnauthorized();
@@ -518,14 +561,24 @@ export default function AdminPortal() {
       const data = await res.json().catch(() => ({}));
       if (res.ok && Array.isArray(data.users)) {
         setSubscribers(data.users);
-      } else {
+        const activeCount = data.users.filter(
+          (u: SubscriberUser) => u.is_active !== 0 && u.is_subscribed !== 0
+        ).length;
+        setHealth((prev) =>
+          prev ? { ...prev, counts: { ...prev.counts, active_users: activeCount } } : prev
+        );
+      } else if (!silent) {
         setSubscribersError(data.detail || data.error || "Failed to retrieve subscriber registry from database.");
       }
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      setSubscribersError(`Database telemetry offline: ${errorMsg}`);
+      if (!silent) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        setSubscribersError(`Database telemetry offline: ${errorMsg}`);
+      }
     } finally {
-      setSubscribersLoading(false);
+      if (!silent) {
+        setSubscribersLoading(false);
+      }
     }
   }
 
@@ -535,10 +588,25 @@ export default function AdminPortal() {
     setMessage(null);
 
     try {
-      const res = await callAdminApi(`/admin/users/${user.id}`, {
+      // 1. Delete on direct Edge D1 route
+      let res = await fetch(`/api/admin/users?id=${user.id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
-      });
+        cache: "no-store",
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        res = await callAdminApi(`/admin/users/${user.id}`, {
+          method: "DELETE",
+          headers: getAuthHeaders(),
+        });
+      } else {
+        // Also sync deletion with backend
+        callAdminApi(`/admin/users/${user.id}`, {
+          method: "DELETE",
+          headers: getAuthHeaders(),
+        }).catch(() => {});
+      }
 
       if (res.status === 401) {
         handleUnauthorized();
@@ -552,11 +620,20 @@ export default function AdminPortal() {
           type: "success",
           text: data.message || `Subscriber ${user.email} permanently removed and master-unsubscribed from database.`,
         });
-        // Optimistically remove from local state
-        setSubscribers((prev) => prev.filter((item) => item.id !== user.id));
+        // Optimistically remove from local state immediately
+        setSubscribers((prev) => {
+          const updated = prev.filter((item) => item.id !== user.id);
+          const activeCount = updated.filter(
+            (u) => u.is_active !== 0 && u.is_subscribed !== 0
+          ).length;
+          setHealth((h) =>
+            h ? { ...h, counts: { ...h.counts, active_users: activeCount } } : h
+          );
+          return updated;
+        });
         setConfirmDeleteUser(null);
-        // Refresh health and subscriber counts
         fetchHealth();
+        fetchUsers(true);
       } else {
         setMessage({
           type: "error",
@@ -1144,7 +1221,9 @@ export default function AdminPortal() {
                 Active Subscribers
               </span>
               <span className="text-2xl sm:text-3xl font-bold font-mono text-[#2C5E54]">
-                {health?.counts.active_users ?? "--"}
+                {subscribers.length > 0
+                  ? subscribers.filter((s) => s.is_subscribed !== 0).length
+                  : (health?.counts.active_users ?? "--")}
               </span>
             </div>
 
@@ -1374,7 +1453,9 @@ export default function AdminPortal() {
                   <div className="flex justify-between py-1.5 border-b border-gray-100">
                     <span className="text-gray-500">Active Subscribers:</span>
                     <span className="font-bold text-[#164A41]">
-                      {health?.counts.active_users ?? "--"}
+                      {subscribers.length > 0
+                        ? subscribers.filter((s) => s.is_subscribed !== 0).length
+                        : (health?.counts.active_users ?? "--")}
                     </span>
                   </div>
                   <div className="flex justify-between py-1.5 border-b border-gray-100">
@@ -1496,7 +1577,7 @@ export default function AdminPortal() {
 
                 {/* Refresh Database Button */}
                 <button
-                  onClick={fetchUsers}
+                  onClick={() => fetchUsers()}
                   disabled={subscribersLoading}
                   className="bg-[#F1B24A] hover:bg-[#dfa23c] active:scale-95 text-[#164A41] px-4 py-2 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   title="Reload subscriber list directly from database"
@@ -1515,7 +1596,7 @@ export default function AdminPortal() {
                   <span>{subscribersError}</span>
                 </div>
                 <button
-                  onClick={fetchUsers}
+                  onClick={() => fetchUsers()}
                   className="underline font-bold text-[#F1B24A] hover:text-white uppercase text-[10px] font-mono cursor-pointer shrink-0"
                 >
                   Retry Query
