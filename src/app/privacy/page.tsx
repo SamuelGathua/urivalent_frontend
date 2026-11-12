@@ -106,6 +106,12 @@ export default function PrivacyPage() {
               Overview
             </Link>
             <Link
+              href="/about"
+              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
+            >
+              About
+            </Link>
+            <Link
               href="/feeds"
               className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors"
             >
@@ -628,6 +634,12 @@ export default function PrivacyPage() {
                 <Link href="/" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
                   <span className="text-white/30 text-[10px]">›</span>
                   <span>Overview</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                  <span className="text-white/30 text-[10px]">›</span>
+                  <span>About</span>
                 </Link>
               </li>
               <li>

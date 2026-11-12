@@ -115,7 +115,7 @@ export default function AppleStyleLanding() {
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="text-lg sm:text-xl md:text-2xl text-zinc-500 font-normal leading-relaxed tracking-normal max-w-2xl mx-auto mb-10"
           >
-            The future of AI intelligence, brought into focus. Follow what is moving
+            The future of Artificial intelligence, brought into focus. Follow what is moving
             the intelligence economy—before it becomes obvious.
           </motion.p>
 
@@ -592,6 +592,9 @@ export default function AppleStyleLanding() {
           <div className="flex flex-wrap items-center gap-6 text-zinc-500">
             <Link href="/" className="text-zinc-800 font-medium hover:underline">
               Classic Landing Page
+            </Link>
+            <Link href="/about" className="hover:text-zinc-900 transition-colors">
+              About
             </Link>
             <Link href="/feeds" className="hover:text-zinc-900 transition-colors">
               Public Feed

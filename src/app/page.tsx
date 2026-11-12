@@ -240,7 +240,7 @@ export default function LandingPage() {
 
             {/* Sub-headline — Reduced on mobile by 5 points (18px down to 13px) */}
             <p className="text-white/95 text-[13px] sm:text-xl lg:text-2xl font-light leading-relaxed sm:leading-snug tracking-wide mb-6 sm:mb-10 max-w-lg">
-              The future of AI intelligence,
+              The future of Artificial intelligence,
               <br />
               brought into focus.
             </p>
@@ -1087,6 +1087,12 @@ export default function LandingPage() {
                 <Link href="/" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
                   <span className="text-white/30 text-[10px]">›</span>
                   <span>Overview</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                  <span className="text-white/30 text-[10px]">›</span>
+                  <span>About</span>
                 </Link>
               </li>
               <li>

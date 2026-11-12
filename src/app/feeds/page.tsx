@@ -1240,6 +1240,12 @@ export default function PublicDashboard() {
                 </Link>
               </li>
               <li>
+                <Link href="/about" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
+                  <span className="text-white/30 text-[10px]">›</span>
+                  <span>About</span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/feeds" className="hover:text-white text-[#F1B24A] font-bold transition-colors inline-flex items-center gap-1.5">
                   <span className="text-[#F1B24A] text-[10px]">›</span>
                   <span>Live Feeds</span>
