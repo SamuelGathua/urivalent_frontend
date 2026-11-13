@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import SubscribeForm from "@/components/SubscribeForm";
@@ -27,6 +26,7 @@ export default function AboutPage() {
 
   const [activePillar, setActivePillar] = useState(0);
   const pillarScrollRef = useRef<HTMLDivElement>(null);
+  const cardWidthRef = useRef<number>(0);
 
   const scrollToPillar = (index: number) => {
     setActivePillar(index);
@@ -43,28 +43,18 @@ export default function AboutPage() {
     if (pillarScrollRef.current) {
       const container = pillarScrollRef.current;
       const scrollLeft = container.scrollLeft;
-      const card = container.firstElementChild as HTMLElement;
-      if (card) {
-        const cardWidth = card.offsetWidth + 14;
-        const newIndex = Math.round(scrollLeft / cardWidth);
-        if (newIndex >= 0 && newIndex < pillars.length && newIndex !== activePillar) {
-          setActivePillar(newIndex);
+      if (!cardWidthRef.current) {
+        const card = container.firstElementChild as HTMLElement;
+        if (card) {
+          cardWidthRef.current = card.offsetWidth + 14;
         }
       }
+      const cardWidth = cardWidthRef.current || 320;
+      const newIndex = Math.round(scrollLeft / cardWidth);
+      if (newIndex >= 0 && newIndex < pillars.length && newIndex !== activePillar) {
+        setActivePillar(newIndex);
+      }
     }
-  };
-
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.15 },
-    },
-  };
-
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
 
   const pillars = [
@@ -209,43 +199,32 @@ export default function AboutPage() {
             sizes="100vw"
             className="object-cover object-center"
             priority
-            quality={90}
+            fetchPriority="high"
+            quality={75}
           />
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 sm:px-12 text-center text-white">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+          <h1
             className="text-4xl sm:text-6xl lg:text-7xl font-bold text-white tracking-tight mb-4 drop-shadow-md"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
             About Urivalent<span className="text-[#d97706]">.</span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          <p
             className="text-sm sm:text-base font-semibold tracking-[0.25em] text-[#d97706] uppercase font-mono drop-shadow-sm"
           >
             The Edge of Tomorrow
-          </motion.p>
+          </p>
         </div>
       </section>
 
       {/* Main Content Area */}
       <div className="bg-[#f3f4f6] py-16 sm:py-24 px-6 sm:px-12 flex-1">
-        <motion.main
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-4xl mx-auto space-y-16"
-        >
+        <main className="max-w-4xl mx-auto space-y-16">
           {/* The Six Pillars Section */}
-          <motion.section
-            variants={itemVariants}
+          <section
             className="bg-white/75 backdrop-blur-xl border border-white/60 shadow-lg rounded-2xl p-5 sm:p-8 md:p-12 relative overflow-hidden"
           >
             {/* Header with Sovereign Telemetry Badge */}
@@ -269,7 +248,7 @@ export default function AboutPage() {
                   <span className="text-xs font-mono font-bold text-[#164A41]">
                     {String(activePillar + 1).padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-mono text-gray-400">/ 06</span>
+                  <span className="text-xs font-mono text-gray-600">/ 06</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -362,7 +341,7 @@ export default function AboutPage() {
                       <div className="flex items-center justify-between gap-1">
                         <div className="flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                          <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-gray-500 font-medium">
+                          <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-gray-700 font-medium">
                             BELLWETHERS
                           </span>
                         </div>
@@ -439,7 +418,7 @@ export default function AboutPage() {
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                        <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-gray-500 font-medium">
+                        <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-gray-700 font-medium">
                           BELLWETHERS
                         </span>
                       </div>
@@ -447,7 +426,7 @@ export default function AboutPage() {
                         {pillar.metric}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex wrap gap-1.5">
                       {pillar.tickers.map((ticker) => (
                         <span
                           key={ticker}
@@ -461,22 +440,20 @@ export default function AboutPage() {
                 </div>
               ))}
             </div>
-          </motion.section>
+          </section>
 
           {/* The Selection Thesis Section */}
-          <motion.section
-            variants={itemVariants}
+          <section
             className="bg-white/60 backdrop-blur-xl border border-white/40 shadow-lg rounded-2xl p-8 md:p-12"
           >
             <h2 className="text-2xl font-bold text-[#1a4537] mb-4">The Selection Thesis: Bottlenecks & Bellwethers</h2>
             <p className="text-gray-600 leading-relaxed">
               The equities tracked within the Urivalent pipeline are not selected by mere market capitalization or media hype, but by their structural criticality. We specifically isolate the monopolies, infrastructural bottlenecks, and pure-play bellwethers of the AI transition. Rather than tracking derivative software wrappers with low competitive moats, Urivalent monitors the entities that own the foundational layer—the extreme ultraviolet lithography machines, the gigawatt-scale nuclear power contracts, the frontier model weights, and the defense-grade data pipelines. We track these specific companies because they actively dictate the physical, computational, and capital limits of what the rest of the industry can build.
             </p>
-          </motion.section>
+          </section>
 
           {/* Founder Section — A Note from the Architect */}
-          <motion.section
-            variants={itemVariants}
+          <section
             className="bg-[#1a4537] text-white shadow-xl rounded-2xl p-8 md:p-12 relative overflow-hidden font-sans"
           >
             {/* Subtle gold accent line */}
@@ -494,30 +471,30 @@ export default function AboutPage() {
                 My background is rooted in the physical world as a mechanical engineer, designing bio-inspired energy systems before transitioning into full-stack development and quantitative finance. That trajectory taught me one thing: the future of code is strictly bound by the realities of hardware and capital. I engineered the Urivalent pipeline to track that exact intersection.
               </p>
               <p className="font-normal leading-relaxed italic">
-                My goal is to filter the noise and deliver high-signal telemetry that extends your vantage point <span className="text-[#d97706] font-semibold italic">as far as your eyes can see</span> giving you a clear view of the edge of tomorrow.&quot;
+                My goal is to filter the noise and deliver high-signal telemetry that extends your vantage point <span className="text-[#F59E0B] font-semibold italic">as far as your eyes can see</span> giving you a clear view of the edge of tomorrow.&quot;
               </p>
             </div>
 
             <div className="mt-8 flex flex-col items-end text-right">
-  <p className="text-white font-medium text-base">
-    &mdash; Samuel Gathua, <span className="text-[#d97706]">Founder</span>
-  </p>
-  <div className="mt-1.5">
-    <a
-      href="https://www.linkedin.com/in/samuelgathua"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 text-xs font-mono text-[#d97706] hover:text-[#f59e0b] hover:underline transition-colors"
-    >
-      <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
-        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-      </svg>
-      <span> Connect with me on LinkedIn </span>
-    </a>
-  </div>
-</div>
-          </motion.section>
-        </motion.main>
+              <p className="text-white font-medium text-base">
+                &mdash; Samuel Gathua, <span className="text-[#F59E0B]">Founder</span>
+              </p>
+              <div className="mt-1.5">
+                <a
+                  href="https://www.linkedin.com/in/samuelgathua"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-mono text-[#F59E0B] hover:text-[#fbbf24] hover:underline transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                  </svg>
+                  <span> Connect with me on LinkedIn </span>
+                </a>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
 
       {/* ================================================================== */}
@@ -538,10 +515,10 @@ export default function AboutPage() {
                 />
               </div>
             </Link>
-            <p className="text-[11px] text-white/60 leading-relaxed max-w-sm font-light">
+            <p className="text-[11px] text-white/80 leading-relaxed max-w-sm font-light">
               Autonomously tracking frontier models, silicon architecture, sovereign compute infrastructure, agent tooling, and capital markets.
             </p>
-            <div className="text-[10px] font-mono text-white/40 pt-1">
+            <div className="text-[10px] font-mono text-white/70 pt-1">
               &copy; {new Date().getFullYear()} Urivalent. All rights reserved.
             </div>
           </div>
@@ -551,10 +528,10 @@ export default function AboutPage() {
             <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#F1B24A] font-semibold block mb-3">
               NAVIGATION
             </span>
-            <ul className="space-y-2 text-xs font-mono text-white/80">
+            <ul className="space-y-2 text-xs font-mono text-white/90">
               <li>
                 <Link href="/" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Overview</span>
                 </Link>
               </li>
@@ -566,31 +543,31 @@ export default function AboutPage() {
               </li>
               <li>
                 <Link href="/feeds" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Live Feeds</span>
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Terms &amp; Conditions</span>
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Privacy Policy</span>
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Contact Desk</span>
                 </Link>
               </li>
               <li>
                 <Link href="/admin" className="text-[#F1B24A] hover:underline font-bold inline-flex items-center gap-1.5">
-                  <span className="text-[#F1B24A]/50 text-[10px]">›</span>
+                  <span className="text-[#F1B24A]/80 text-[10px]">›</span>
                   <span>Admin Console ↗</span>
                 </Link>
               </li>
@@ -605,13 +582,13 @@ export default function AboutPage() {
                 DISPATCH BRIEFING
               </span>
             </div>
-            <h4
+            <h3
               className="text-base sm:text-lg font-medium tracking-tight text-white"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               Subscribe to Sovereign Signals
-            </h4>
-            <p className="text-[11px] text-white/65 font-light leading-relaxed max-w-md">
+            </h3>
+            <p className="text-[11px] text-white/80 font-light leading-relaxed max-w-md">
               Daily synthesized intelligence on frontier AI models, silicon bottlenecks, and sovereign compute infrastructure.
             </p>
             <div className="pt-1 max-w-md">
