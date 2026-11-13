@@ -5,7 +5,7 @@ import { ratelimit } from '@/lib/ratelimit';
 import { db } from '@/lib/db';
 import { Resend } from 'resend';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;

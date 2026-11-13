@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 const CLOUD_API_URL = (
   process.env.BACKEND_API_URL ||
