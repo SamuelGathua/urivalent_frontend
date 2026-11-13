@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -25,6 +25,35 @@ export default function AboutPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
+  const [activePillar, setActivePillar] = useState(0);
+  const pillarScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToPillar = (index: number) => {
+    setActivePillar(index);
+    if (pillarScrollRef.current) {
+      const container = pillarScrollRef.current;
+      const card = container.children[index] as HTMLElement;
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }
+  };
+
+  const handlePillarScroll = () => {
+    if (pillarScrollRef.current) {
+      const container = pillarScrollRef.current;
+      const scrollLeft = container.scrollLeft;
+      const card = container.firstElementChild as HTMLElement;
+      if (card) {
+        const cardWidth = card.offsetWidth + 14;
+        const newIndex = Math.round(scrollLeft / cardWidth);
+        if (newIndex >= 0 && newIndex < pillars.length && newIndex !== activePillar) {
+          setActivePillar(newIndex);
+        }
+      }
+    }
+  };
+
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -40,40 +69,64 @@ export default function AboutPage() {
 
   const pillars = [
     {
+      id: "01",
+      shortTitle: "Silicon",
       title: "Silicon & Nanotech",
+      thesis: "Compute is the new global reserve currency.",
       description:
-        "Compute is the new global reserve currency. The physical limits of semiconductor manufacturing dictate the pace of AI advancement, from extreme ultraviolet (EUV) lithography to 2.5D packaging bottlenecks and next-gen wafer allocation.",
-      tracked: "Tracked: NVDA, TSM, ASML, ARM",
+        "The physical limits of semiconductor manufacturing dictate the pace of AI advancement, from extreme ultraviolet (EUV) lithography to 2.5D packaging bottlenecks and next-gen wafer allocation.",
+      metric: "Sub-2nm EUV & CoWoS",
+      tickers: ["NVDA", "TSM", "ASML", "ARM"],
     },
     {
+      id: "02",
+      shortTitle: "Energy",
       title: "Energy & Infra",
+      thesis: "Intelligence is thermodynamically constrained.",
       description:
-        "Intelligence is thermodynamically constrained. The transition demands dedicated baseload power, gigawatt-scale cluster campuses, behind-the-meter nuclear power purchase agreements, and ultra-high-density thermal management.",
-      tracked: "Tracked: CEG, VRT, NEE, SPCX",
+        "The transition demands dedicated baseload power, gigawatt-scale cluster campuses, behind-the-meter nuclear power purchase agreements, and ultra-high-density thermal management.",
+      metric: "GW-Scale Baseload & SMRs",
+      tickers: ["CEG", "VRT", "NEE", "SPCX"],
     },
     {
+      id: "03",
+      shortTitle: "Models",
       title: "Models & Research",
+      thesis: "Algorithmic velocity & scaling laws dictate market moats.",
       description:
-        "Algorithmic velocity and architectural breakthroughs. Tracking frontier foundation models, reasoning scaling laws, test-time compute trade-offs, and multi-modal arXiv preprints directly from leading research laboratories.",
-      tracked: "Tracked: GOOGL, META, MSFT, TSLA",
+        "Tracking frontier foundation models, reasoning scaling laws, test-time compute trade-offs, and multi-modal arXiv preprints directly from leading research laboratories.",
+      metric: "Reasoning Scaling & Latents",
+      tickers: ["GOOGL", "META", "MSFT", "TSLA"],
     },
     {
+      id: "04",
+      shortTitle: "Agents",
       title: "Agents & Tooling",
+      thesis: "Translating raw models into autonomous economic agency.",
       description:
-        "The translation of raw foundation models into autonomous economic agency. Monitoring workflow orchestrators, code-synthesis engines, embodied robotics, and developer ecosystems bridging models with real-world execution.",
-      tracked: "Tracked: NOW, NET, PATH, FIGURE",
+        "Monitoring workflow orchestrators, code-synthesis engines, embodied robotics, and developer ecosystems bridging models with real-world execution.",
+      metric: "Workflows & Humanoids",
+      tickers: ["NOW", "NET", "PATH", "FIGURE"],
     },
     {
+      id: "05",
+      shortTitle: "Capital",
       title: "Capital & Markets",
+      thesis: "The balance-sheet realities of the compute build-out.",
       description:
-        "The balance-sheet realities of the compute build-out. Tracking hyperscaler capex expenditures, private venture concentration across frontier clusters, public equity valuations, and specialized infrastructure debt financing.",
-      tracked: "Tracked: SFTBY, BX, COIN",
+        "Tracking hyperscaler capex expenditures, private venture concentration across frontier clusters, public equity valuations, and specialized infrastructure debt financing.",
+      metric: "$200B+ Hyperscaler Capex",
+      tickers: ["SFTBY", "BX", "COIN"],
     },
     {
+      id: "06",
+      shortTitle: "Policy",
       title: "Policy & Sovereignty",
+      thesis: "The geopolitical contest for computational hegemony.",
       description:
-        "The geopolitical contest for computational hegemony. Monitoring national compute clusters, strategic export controls on lithography and advanced accelerators, defense-grade data pipelines, and sovereign AI regulatory doctrines.",
-      tracked: "Tracked: PLTR, BAH, LMT, ANDURIL",
+        "Monitoring national compute clusters, strategic export controls on lithography and advanced accelerators, defense-grade data pipelines, and sovereign AI regulatory doctrines.",
+      metric: "ITAR & Sovereign Compute",
+      tickers: ["PLTR", "BAH", "LMT", "ANDURIL"],
     },
   ];
 
@@ -193,23 +246,218 @@ export default function AboutPage() {
           {/* The Six Pillars Section */}
           <motion.section
             variants={itemVariants}
-            className="bg-white/60 backdrop-blur-xl border border-white/40 shadow-lg rounded-2xl p-8 md:p-12"
+            className="bg-white/75 backdrop-blur-xl border border-white/60 shadow-lg rounded-2xl p-5 sm:p-8 md:p-12 relative overflow-hidden"
           >
-            <h2 className="text-2xl font-bold text-[#1a4537] mb-6">The Six Pillars of Intelligence</h2>
-            <p className="text-gray-600 mb-8 leading-relaxed">
+            {/* Header with Sovereign Telemetry Badge */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#164A41]/[0.06] border border-[#164A41]/10 text-[10px] font-mono uppercase tracking-[0.2em] text-[#d97706] font-semibold mb-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#d97706]" />
+                  <span>Sovereign Architecture // 06 Pillars</span>
+                </div>
+                <h2
+                  className="text-2xl sm:text-3xl font-bold text-[#164A41] tracking-tight"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  The Six Pillars of Intelligence<span className="text-[#d97706]">.</span>
+                </h2>
+              </div>
+
+              {/* Mobile Slide Counter & Arrow Controls */}
+              <div className="md:hidden flex items-center justify-between sm:justify-end gap-3 pt-2 border-t sm:border-t-0 border-[#164A41]/10">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-mono font-bold text-[#164A41]">
+                    {String(activePillar + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-xs font-mono text-gray-400">/ 06</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => scrollToPillar(Math.max(0, activePillar - 1))}
+                    disabled={activePillar === 0}
+                    className="w-8 h-8 rounded-full border border-[#164A41]/15 bg-white text-[#164A41] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-gray-50 active:scale-95 transition-all shadow-sm"
+                    aria-label="Previous pillar"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToPillar(Math.min(pillars.length - 1, activePillar + 1))}
+                    disabled={activePillar === pillars.length - 1}
+                    className="w-8 h-8 rounded-full border border-[#164A41]/15 bg-white text-[#164A41] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-gray-50 active:scale-95 transition-all shadow-sm"
+                    aria-label="Next pillar"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed max-w-3xl">
               The artificial intelligence transition is not a single software trend; it is a fundamental reorganization of global infrastructure, compute, and capital. Urivalent tracks this convergence across six definitive fields to provide a high-signal vantage point.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            {/* Mobile Segmented Filter Bar */}
+            <div className="md:hidden mb-4">
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+                {pillars.map((pillar, idx) => (
+                  <button
+                    key={pillar.id}
+                    type="button"
+                    onClick={() => scrollToPillar(idx)}
+                    className={`shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-mono tracking-wider font-semibold transition-all inline-flex items-center ${
+                      activePillar === idx
+                        ? "bg-[#164A41] text-[#FAF9F5] shadow-sm"
+                        : "bg-white/80 text-[#164A41]/80 border border-[#164A41]/10 hover:bg-white"
+                    }`}
+                  >
+                    {pillar.shortTitle}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile Horizontal Snap Carousel */}
+            <div className="md:hidden">
+              <div
+                ref={pillarScrollRef}
+                onScroll={handlePillarScroll}
+                className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-3 -mx-5 px-5"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {pillars.map((pillar) => (
+                  <div
+                    key={pillar.id}
+                    className="w-[84vw] max-w-[340px] shrink-0 snap-center rounded-2xl bg-gradient-to-b from-white to-[#F8FAF8] border border-[#164A41]/15 p-5 shadow-[0_4px_20px_rgba(22,74,65,0.06)] flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Title */}
+                      <h3
+                        className="font-bold text-[#164A41] text-lg tracking-tight mb-2.5"
+                        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                      >
+                        {pillar.title}
+                      </h3>
+
+                      {/* Executive Thesis Callout */}
+                      <div className="pl-3 py-1.5 border-l-2 border-[#d97706] bg-[#d97706]/[0.06] rounded-r-lg mb-3">
+                        <p className="text-xs font-semibold text-gray-900 leading-snug">
+                          &ldquo;{pillar.thesis}&rdquo;
+                        </p>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        {pillar.description}
+                      </p>
+                    </div>
+
+                    {/* Bottom Tickers & Benchmark */}
+                    <div className="pt-3.5 border-t border-[#164A41]/10 mt-4 flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                          <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-gray-500 font-medium">
+                            BELLWETHERS
+                          </span>
+                        </div>
+                        <span className="text-[9px] font-mono text-[#d97706] font-semibold">
+                          {pillar.metric}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pillar.tickers.map((ticker) => (
+                          <span
+                            key={ticker}
+                            className="px-2 py-0.5 rounded-md bg-[#164A41]/[0.05] border border-[#164A41]/15 text-[11px] font-mono font-bold text-[#164A41] tracking-wider"
+                          >
+                            {ticker}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Carousel Pagination Dots */}
+              <div className="flex items-center justify-center gap-1 mt-1">
+                {pillars.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => scrollToPillar(idx)}
+                    className="min-w-[40px] min-h-[40px] flex items-center justify-center -mx-1"
+                    aria-label={`Go to pillar ${idx + 1}`}
+                  >
+                    <span
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        activePillar === idx ? "w-6 bg-[#164A41]" : "w-1.5 bg-[#164A41]/25"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Grid Layout (Elevated Dossier Cards) */}
+            <div className="hidden md:grid md:grid-cols-2 gap-6">
               {pillars.map((pillar) => (
                 <div
-                  key={pillar.title}
-                  className="bg-white/50 backdrop-blur-md border border-white/60 rounded-xl p-6 transition-all hover:shadow-md"
+                  key={pillar.id}
+                  className="bg-white/75 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#164A41]/20 transition-all flex flex-col justify-between"
                 >
-                  <h3 className="font-semibold text-[#1a4537] text-base">{pillar.title}</h3>
-                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">
-                    {pillar.description}
-                  </p>
-                  <p className="text-xs font-medium text-[#d97706] mt-3">{pillar.tracked}</p>
+                  <div>
+                    {/* Title */}
+                    <h3
+                      className="font-bold text-[#164A41] text-lg tracking-tight mb-2.5"
+                      style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                    >
+                      {pillar.title}
+                    </h3>
+
+                    {/* Executive Thesis Callout */}
+                    <div className="pl-3 py-1.5 border-l-2 border-[#d97706] bg-[#d97706]/[0.06] rounded-r-lg mb-3">
+                      <p className="text-xs font-semibold text-gray-900 leading-snug">
+                        &ldquo;{pillar.thesis}&rdquo;
+                      </p>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                      {pillar.description}
+                    </p>
+                  </div>
+
+                  {/* Bottom Tickers & Benchmark */}
+                  <div className="pt-3.5 border-t border-[#164A41]/10 mt-5 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                        <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-gray-500 font-medium">
+                          BELLWETHERS
+                        </span>
+                      </div>
+                      <span className="text-[9px] font-mono text-[#d97706] font-semibold">
+                        {pillar.metric}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pillar.tickers.map((ticker) => (
+                        <span
+                          key={ticker}
+                          className="px-2 py-0.5 rounded-md bg-[#164A41]/[0.05] border border-[#164A41]/15 text-[11px] font-mono font-bold text-[#164A41] tracking-wider"
+                        >
+                          {ticker}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

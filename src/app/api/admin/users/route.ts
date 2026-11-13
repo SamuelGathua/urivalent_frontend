@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
-// Helper to verify admin token or key in edge runtime
+// Helper to verify admin token or key in nodejs runtime
 function isAuthorized(req: NextRequest): boolean {
   const authHeader = req.headers.get('authorization') || '';
   const adminKey = req.headers.get('x-admin-key') || '';
