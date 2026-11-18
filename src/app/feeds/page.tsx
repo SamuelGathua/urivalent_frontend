@@ -154,12 +154,79 @@ function formatChangePct(val: number | null | undefined): string {
   return `${sign}${val.toFixed(2)}%`;
 }
 
+/**
+ * Deduplicates and caps verified source links to a maximum of 2.
+ * If multiple source links belong to the same publisher/domain or URL, collapses to 1.
+ */
+function cleanSourceLinks(sources?: SourceLink[]): SourceLink[] {
+  if (!sources || !Array.isArray(sources) || sources.length === 0) return [];
+
+  const seenNames = new Set<string>();
+  const seenUrls = new Set<string>();
+  const result: SourceLink[] = [];
+
+  for (const src of sources) {
+    if (!src || !src.link) continue;
+
+    let cleanName = (src.source || "").trim();
+    if (!cleanName) {
+      try {
+        const u = new URL(src.link);
+        cleanName = u.hostname.replace(/^www\./, "");
+      } catch {
+        cleanName = "Source";
+      }
+    }
+
+    // Strip aggregator prefixes e.g. "NewsAPI / The Verge" -> "The Verge"
+    cleanName = cleanName.replace(/^(NewsAPI|RSS)\s*\/\s*/i, "").trim();
+
+    const normName = cleanName.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const normUrl = src.link.trim().toLowerCase().replace(/\/$/, "");
+
+    if (!seenNames.has(normName) && !seenUrls.has(normUrl)) {
+      seenNames.add(normName);
+      seenUrls.add(normUrl);
+      result.push({
+        ...src,
+        source: cleanName,
+      });
+    }
+
+    if (result.length >= 2) break; // Hard maximum of 2 sources
+  }
+
+  return result;
+}
+
+/**
+ * Normalizes category and pillar labels into clean canonical strings,
+ * eliminating bracket mismatches e.g. "[SILICON & NANOTECH]" vs "Silicon & Nanotech".
+ */
+function normalizePillarName(raw?: string): string {
+  if (!raw) return "Models & Research";
+  const clean = raw.replace(/^\[/, "").replace(/\]$/, "").trim();
+  const upper = clean.toUpperCase();
+
+  if (upper.includes("SILICON") || upper.includes("NANOTECH")) return "Silicon & Nanotech";
+  if (upper.includes("ENERGY") || upper.includes("INFRA") || upper.includes("SPACE")) return "Energy & Infra";
+  if (upper.includes("MODEL") || upper.includes("RESEARCH")) return "Models & Research";
+  if (upper.includes("AGENT") || upper.includes("TOOL") || upper.includes("ROBOT")) return "Agents & Tooling";
+  if (upper.includes("CAPITAL") || upper.includes("MARKET")) return "Capital & Markets";
+  if (upper.includes("POLICY") || upper.includes("SOVEREIGN") || upper.includes("DEFENSE")) return "Policy & Sovereignty";
+  if (upper.includes("BIO") || upper.includes("MEDIC")) return "Bio-Intelligence & Medicine";
+
+  return clean;
+}
+
 export default function PublicDashboard() {
   const [data, setData] = useState<FeedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [newsSelectedPillar, setNewsSelectedPillar] = useState<string>("ALL");
+  const [newsSearchQuery, setNewsSearchQuery] = useState<string>("");
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [navVisible, setNavVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -314,6 +381,134 @@ export default function PublicDashboard() {
     return Object.values(marketCategories).reduce((acc, curr) => acc + curr.length, 0);
   }, [marketCategories]);
 
+  // Clean, deduplicated, and filtered intelligence signals
+  const {
+    filteredTier1,
+    filteredPillars,
+    totalSignalsCount,
+    filteredSignalsCount,
+    availablePillars,
+    pillarCounts,
+  } = useMemo(() => {
+    if (!data) {
+      return {
+        filteredTier1: [] as IntelItem[],
+        filteredPillars: {} as Record<string, IntelItem[]>,
+        totalSignalsCount: 0,
+        filteredSignalsCount: 0,
+        availablePillars: [] as string[],
+        pillarCounts: {} as Record<string, number>,
+      };
+    }
+
+    const seenHeadlines = new Set<string>();
+
+    const getHeadlineKey = (h?: string) =>
+      (h || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 50);
+
+    // 1. Deduplicate Tier-1 Priority Breakthroughs
+    const uniqueTier1: IntelItem[] = [];
+    for (const item of data.tier1_items || []) {
+      const key = getHeadlineKey(item.headline);
+      if (!key || seenHeadlines.has(key)) continue;
+      seenHeadlines.add(key);
+      uniqueTier1.push({
+        ...item,
+        pillar_category: normalizePillarName(item.pillar_category),
+        parsed_sources: cleanSourceLinks(item.parsed_sources),
+      });
+    }
+
+    // 2. Deduplicate Sector Pillars (strictly exclude stories already featured in Tier-1 or earlier pillars)
+    const normalizedPillarGroups: Record<string, IntelItem[]> = {};
+    const counts: Record<string, number> = {};
+
+    Object.entries(data.pillar_groups || {}).forEach(([rawPillar, items]) => {
+      const canonicalPillar = normalizePillarName(rawPillar);
+      if (!normalizedPillarGroups[canonicalPillar]) {
+        normalizedPillarGroups[canonicalPillar] = [];
+      }
+
+      for (const item of items || []) {
+        const key = getHeadlineKey(item.headline);
+        if (!key || seenHeadlines.has(key)) continue;
+        seenHeadlines.add(key);
+
+        normalizedPillarGroups[canonicalPillar].push({
+          ...item,
+          pillar_category: canonicalPillar,
+          parsed_sources: cleanSourceLinks(item.parsed_sources),
+        });
+      }
+    });
+
+    // Remove empty pillars
+    Object.keys(normalizedPillarGroups).forEach((p) => {
+      if (normalizedPillarGroups[p].length === 0) {
+        delete normalizedPillarGroups[p];
+      }
+    });
+
+    // Calculate total counts per canonical pillar
+    uniqueTier1.forEach((it) => {
+      counts[it.pillar_category] = (counts[it.pillar_category] || 0) + 1;
+    });
+    Object.entries(normalizedPillarGroups).forEach(([p, items]) => {
+      counts[p] = (counts[p] || 0) + items.length;
+    });
+
+    const totalUnique =
+      uniqueTier1.length +
+      Object.values(normalizedPillarGroups).reduce((acc, curr) => acc + curr.length, 0);
+
+    // 3. Apply active filters (Pillar filter + Search Query)
+    const query = newsSearchQuery.trim().toLowerCase();
+
+    const matchesQuery = (it: IntelItem) => {
+      if (!query) return true;
+      return (
+        it.headline.toLowerCase().includes(query) ||
+        it.primary_entity.toLowerCase().includes(query) ||
+        (it.what_happened && it.what_happened.toLowerCase().includes(query)) ||
+        (it.technical_summary && it.technical_summary.toLowerCase().includes(query)) ||
+        (it.pillar_category && it.pillar_category.toLowerCase().includes(query))
+      );
+    };
+
+    const matchesPillar = (pillarName: string) => {
+      if (newsSelectedPillar === "ALL") return true;
+      return pillarName.toUpperCase() === newsSelectedPillar.toUpperCase();
+    };
+
+    const finalTier1 = uniqueTier1.filter(
+      (it) => matchesPillar(it.pillar_category) && matchesQuery(it)
+    );
+
+    const finalPillars: Record<string, IntelItem[]> = {};
+    Object.entries(normalizedPillarGroups).forEach(([p, items]) => {
+      if (!matchesPillar(p)) return;
+      const filtered = items.filter(matchesQuery);
+      if (filtered.length > 0) {
+        finalPillars[p] = filtered;
+      }
+    });
+
+    const filteredTotal =
+      finalTier1.length +
+      Object.values(finalPillars).reduce((acc, curr) => acc + curr.length, 0);
+
+    const activePillars = Object.keys(counts).sort();
+
+    return {
+      filteredTier1: finalTier1,
+      filteredPillars: finalPillars,
+      totalSignalsCount: totalUnique,
+      filteredSignalsCount: filteredTotal,
+      availablePillars: activePillars,
+      pillarCounts: counts,
+    };
+  }, [data, newsSelectedPillar, newsSearchQuery]);
+
   // =========================================================================
   // 1. LOADING SCREEN — LUXURY GLASS DOCK & WARM IVORY PALETTE
   // =========================================================================
@@ -453,20 +648,20 @@ export default function PublicDashboard() {
   // 3. MAIN DASHBOARD VIEW — FULL EDITORIAL EXPERIENCE
   // =========================================================================
   return (
-    <div className="min-h-screen bg-[#FAF9F5] text-[#164A41] flex flex-col font-sans antialiased selection:bg-[#F1B24A] selection:text-[#164A41]">
+    <div className="min-h-screen bg-[#FAF9F5] text-[#164A41] flex flex-col font-sans antialiased selection:bg-[#F1B24A] selection:text-[#164A41] w-full max-w-full overflow-x-hidden">
       {/* ================================================================== */}
       {/* FLOATING GLASS ISLAND NAVIGATION DOCK (MATCHING LANDING PAGE)      */}
       {/* ================================================================== */}
       <header
-        className={`fixed top-4 sm:top-5 left-0 right-0 z-50 px-4 sm:px-8 transition-all duration-700 ease-out ${
+        className={`fixed top-4 sm:top-5 left-0 right-0 z-50 px-3 sm:px-6 w-full max-w-full pointer-events-none transition-all duration-700 ease-out ${
           navVisible && !isHeroIdle
             ? "translate-y-0 opacity-100"
-            : "-translate-y-24 opacity-0 pointer-events-none"
+            : "-translate-y-24 opacity-0"
         }`}
       >
-        <div className="max-w-[1340px] mx-auto bg-[#0A1D16]/80 hover:bg-[#0A1D16]/90 backdrop-blur-xl border border-white/[0.14] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6),0_0_1px_1px_rgba(255,255,255,0.08)] flex items-center justify-between gap-3 sm:gap-4 transition-all">
+        <div className="pointer-events-auto max-w-[1340px] w-full mx-auto bg-[#0A1D16]/80 hover:bg-[#0A1D16]/90 backdrop-blur-xl border border-white/[0.14] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6),0_0_1px_1px_rgba(255,255,255,0.08)] flex items-center justify-between gap-3 sm:gap-4 transition-all">
           {/* Left: Brand Logo in luminous pearl pod for maximum contrast & luxury */}
-          <Link href="/" className="flex items-center gap-2 group min-h-[44px] min-w-[44px]" aria-label="Urivalent Homepage">
+          <Link href="/" className="flex items-center gap-2 group min-h-[44px] min-w-[44px] shrink-0" aria-label="Urivalent Homepage">
             <div className="bg-white/[0.94] hover:bg-white px-3.5 py-1.5 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.3)] transition-all group-hover:scale-[1.03]">
               <Image
                 src="/urivalent_logo.webp"
@@ -480,28 +675,28 @@ export default function PublicDashboard() {
           </Link>
 
           {/* Right: In-Feed Jump Navigation */}
-          <nav className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-white/75 overflow-x-auto">
+          <nav className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-white/75 overflow-x-auto no-scrollbar max-w-[65%] sm:max-w-none">
             <a
               href="#watchlist"
-              className="px-2.5 sm:px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+              className="px-2.5 sm:px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap shrink-0"
             >
               Watchlist
             </a>
             <a
               href="#priority"
-              className="px-2.5 sm:px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+              className="px-2.5 sm:px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap shrink-0"
             >
               Breakthroughs
             </a>
             <a
               href="#sectors"
-              className="px-2.5 sm:px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+              className="px-2.5 sm:px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap shrink-0"
             >
               Sectors
             </a>
             <a
               href="#radar"
-              className="px-2.5 sm:px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+              className="px-2.5 sm:px-3 py-1.5 rounded-full hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap shrink-0"
             >
               Radar
             </a>
@@ -512,7 +707,7 @@ export default function PublicDashboard() {
       {/* ================================================================== */}
       {/* 1. CINEMATIC HERO SECTION                                          */}
       {/* ================================================================== */}
-      <section className="relative min-h-[440px] sm:min-h-[500px] lg:min-h-[540px] flex flex-col justify-center pt-24 sm:pt-28 pb-10 sm:pb-12 overflow-hidden">
+      <section className="relative min-h-[440px] sm:min-h-[500px] lg:min-h-[540px] flex flex-col justify-center pt-24 sm:pt-28 pb-10 sm:pb-12 overflow-hidden w-full max-w-full">
         {/* Full-width Background Image: feeds_page.jpg */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -529,18 +724,18 @@ export default function PublicDashboard() {
         </div>
 
         {/* Hero Content Container — Moved higher & centered */}
-        <div className="relative z-10 max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto">
+        <div className="relative z-10 max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto box-border">
           <div className="max-w-2xl lg:max-w-3xl">
             {/* Main Headline */}
             <h1
-              className="text-3xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-white mb-3 sm:mb-4 leading-[1.05] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
+              className="text-3xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-white mb-3 sm:mb-4 leading-[1.05] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] break-words"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               The Intelligence Feed<span className="text-[#F1B24A]">.</span>
             </h1>
 
             {/* Subtitle broken into 3 lines in theme mint color (#7CE5B4) */}
-            <p className="text-base sm:text-xl lg:text-2xl text-[#7CE5B4] font-light leading-relaxed tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+            <p className="text-base sm:text-xl lg:text-2xl text-[#7CE5B4] font-light leading-relaxed tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] break-words">
               Autonomously tracking frontier models, silicon architecture,<br />
               sovereign compute infrastructure, agent tooling,<br />
               and capital markets.
@@ -552,7 +747,7 @@ export default function PublicDashboard() {
       {/* ================================================================== */}
       {/* 2. MAIN INTELLIGENCE FEED BODY                                     */}
       {/* ================================================================== */}
-      <main className="max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full space-y-12 sm:space-y-16">
+      <main className="max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full max-w-full overflow-hidden space-y-10 sm:space-y-14 box-border">
 
         {/* ================================================================= */}
         {/* SECTION: SOVEREIGN AI & COMPUTE MARKET WATCHLIST                  */}
@@ -921,43 +1116,162 @@ export default function PublicDashboard() {
         </section>
 
         {/* ================================================================= */}
+        {/* INTELLIGENCE SIGNAL DEDUPLICATION & CONTROL BAR                    */}
+        {/* ================================================================= */}
+        <section className="w-full max-w-full overflow-hidden">
+          <div className="bg-white/95 backdrop-blur-sm border border-[#164A41]/10 rounded-2xl p-4 sm:p-5 shadow-[0_4px_20px_rgba(22,74,65,0.04)] space-y-3.5 w-full max-w-full box-border">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#d97706]">
+                    Autonomous Intelligence Filter
+                  </span>
+                </div>
+                <h2
+                  className="text-lg sm:text-xl font-medium text-[#164A41]"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  Verified Intelligence Signals
+                </h2>
+                <p className="text-xs text-gray-500 font-mono mt-0.5">
+                  Showing {filteredSignalsCount} unique verified signals ({totalSignalsCount} monitored)
+                </p>
+              </div>
+
+              {/* News Search Filter */}
+              <div className="relative w-full sm:w-72">
+                <input
+                  type="text"
+                  value={newsSearchQuery}
+                  onChange={(e) => setNewsSearchQuery(e.target.value)}
+                  placeholder="Filter news by entity or keyword..."
+                  className="w-full bg-[#FAF9F5] hover:bg-white focus:bg-white text-[#164A41] placeholder-gray-400 text-xs px-3.5 py-2 pl-9 pr-7 rounded-full border border-[#164A41]/15 focus:outline-none focus:border-[#d97706] transition"
+                />
+                <svg
+                  className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                {newsSearchQuery && (
+                  <button
+                    onClick={() => setNewsSearchQuery("")}
+                    className="absolute right-2.5 top-2 text-gray-400 hover:text-gray-700 text-xs cursor-pointer"
+                    title="Clear filter"
+                  >
+                    &times;
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Pillar Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs -mx-1 px-1 w-full max-w-full">
+              <button
+                onClick={() => setNewsSelectedPillar("ALL")}
+                className={`px-3 py-1.5 rounded-full font-mono font-bold uppercase tracking-wider transition whitespace-nowrap cursor-pointer shrink-0 ${
+                  newsSelectedPillar === "ALL"
+                    ? "bg-[#164A41] text-white shadow-sm"
+                    : "bg-[#FAF9F5] text-[#4D774E] hover:bg-[#9DC88D]/20 hover:text-[#164A41] border border-[#164A41]/10"
+                }`}
+              >
+                All Signals ({totalSignalsCount})
+              </button>
+              {availablePillars.map((pillar) => {
+                const count = pillarCounts[pillar] || 0;
+                const isSelected = newsSelectedPillar === pillar;
+                return (
+                  <button
+                    key={pillar}
+                    onClick={() => setNewsSelectedPillar(pillar)}
+                    className={`px-3 py-1.5 rounded-full font-mono font-bold uppercase tracking-wider transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                      isSelected
+                        ? "bg-[#164A41] text-white shadow-sm"
+                        : "bg-[#FAF9F5] text-[#4D774E] hover:bg-[#9DC88D]/20 hover:text-[#164A41] border border-[#164A41]/10"
+                    }`}
+                  >
+                    <span>{pillar}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                        isSelected ? "bg-[#F1B24A] text-[#164A41]" : "bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Empty state when filters match zero items */}
+        {filteredSignalsCount === 0 && (
+          <div className="bg-white border border-[#164A41]/10 rounded-2xl p-8 sm:p-12 text-center space-y-3 w-full max-w-full">
+            <div className="text-sm sm:text-base font-bold text-[#164A41] font-mono">
+              No intelligence signals match &ldquo;{newsSearchQuery || newsSelectedPillar}&rdquo;.
+            </div>
+            <p className="text-xs text-[#4D774E]">
+              Try clearing the search query or selecting &ldquo;All Signals&rdquo;.
+            </p>
+            <button
+              onClick={() => {
+                setNewsSelectedPillar("ALL");
+                setNewsSearchQuery("");
+              }}
+              className="bg-[#164A41] hover:bg-[#0D9488] text-white text-xs font-mono font-bold uppercase tracking-wider px-4 py-2 rounded-full transition cursor-pointer"
+            >
+              Reset News Filters
+            </button>
+          </div>
+        )}
+
+        {/* ================================================================= */}
         {/* SECTION 1: PRIORITY INTELLIGENCE (TIER-1 BREAKTHROUGHS)           */}
         {/* ================================================================= */}
-        <section id="priority" className="scroll-mt-28">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#164A41]/10 pb-3 mb-6 gap-2">
-            <div>
-              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#F1B24A]/20 text-[#164A41] text-[10px] font-mono font-bold uppercase tracking-wider mb-1">
-                <span>Tier 1 Verification</span>
+        {filteredTier1.length > 0 && (
+          <section id="priority" className="scroll-mt-28 w-full max-w-full overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#164A41]/10 pb-3 mb-6 gap-2">
+              <div>
+                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#F1B24A]/20 text-[#164A41] text-[10px] font-mono font-bold uppercase tracking-wider mb-1">
+                  <span>Tier 1 Verification</span>
+                </div>
+                <h2
+                  className="text-2xl sm:text-3xl font-medium text-[#164A41]"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  Priority Breakthroughs
+                </h2>
               </div>
-              <h2
-                className="text-2xl sm:text-3xl font-medium text-[#164A41]"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-              >
-                Priority Breakthroughs
-              </h2>
+              <span className="text-xs text-gray-500 font-mono">
+                {filteredTier1.length} High-Impact Verified {filteredTier1.length === 1 ? "Signal" : "Signals"}
+              </span>
             </div>
-            <span className="text-xs text-gray-500 font-mono">
-              High-Impact Verified Signal
-            </span>
-          </div>
 
-          {data.tier1_items && data.tier1_items.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6">
-              {data.tier1_items.map((item, idx) => (
+            <div className="grid grid-cols-1 gap-6 w-full max-w-full">
+              {filteredTier1.map((item, idx) => (
                 <article
                   key={item.id || item.cluster_id || idx}
-                  className="bg-white rounded-2xl border border-[#164A41]/10 p-6 sm:p-8 shadow-[0_4px_24px_-4px_rgba(22,74,65,0.06)] hover:shadow-[0_12px_36px_-4px_rgba(22,74,65,0.1)] transition-all hover:border-[#F1B24A]/40 group"
+                  className="bg-white rounded-2xl border border-[#164A41]/10 p-6 sm:p-8 shadow-[0_4px_24px_-4px_rgba(22,74,65,0.06)] hover:shadow-[0_12px_36px_-4px_rgba(22,74,65,0.1)] transition-all hover:border-[#F1B24A]/40 group w-full max-w-full min-w-0 overflow-hidden box-border"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="bg-[#164A41] text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5 min-w-0 w-full">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      <span className="bg-[#164A41] text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase tracking-wider truncate max-w-[200px]">
                         {item.pillar_category}
                       </span>
-                      <span className="bg-[#9DC88D]/25 text-[#164A41] text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase">
+                      <span className="bg-[#9DC88D]/25 text-[#164A41] text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase truncate max-w-[200px]">
                         {item.primary_entity}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className="text-[10px] font-mono font-medium text-[#4D774E] border border-[#9DC88D]/50 px-2.5 py-1 rounded-full bg-[#FAF9F5]">
                         {item.hype_vs_substance}
                       </span>
@@ -965,24 +1279,24 @@ export default function PublicDashboard() {
                   </div>
 
                   <h3
-                    className="text-xl sm:text-2xl font-medium text-[#164A41] leading-snug mb-3"
+                    className="text-xl sm:text-2xl font-medium text-[#164A41] leading-snug mb-3 break-words hyphens-auto min-w-0"
                     style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                   >
                     {item.headline}
                   </h3>
 
-                  <p className="text-sm sm:text-base text-[#4D774E] font-light leading-relaxed mb-5">
+                  <p className="text-sm sm:text-base text-[#4D774E] font-light leading-relaxed mb-5 break-words min-w-0">
                     {item.what_happened}
                   </p>
 
-                  <div className="bg-[#FAF9F5] border-l-4 border-[#F1B24A] p-4 sm:p-5 rounded-r-xl space-y-2.5 mb-5 text-xs sm:text-sm">
-                    <div>
+                  <div className="bg-[#FAF9F5] border-l-4 border-[#F1B24A] p-4 sm:p-5 rounded-r-xl space-y-2.5 mb-5 text-xs sm:text-sm min-w-0 w-full overflow-hidden">
+                    <div className="break-words">
                       <span className="font-bold text-[#164A41] font-mono uppercase tracking-wider text-[11px]">
                         Technical Summary:
                       </span>
                       <span className="text-[#164A41] ml-2 leading-relaxed">{item.technical_summary}</span>
                     </div>
-                    <div>
+                    <div className="break-words">
                       <span className="font-bold text-[#F1B24A] font-mono uppercase tracking-wider text-[11px]">
                         Strategic Implication:
                       </span>
@@ -990,11 +1304,11 @@ export default function PublicDashboard() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between pt-3 border-t border-gray-100 text-xs gap-3">
-                    <span className="text-gray-400 font-mono text-[11px]">
+                  <div className="flex flex-wrap items-center justify-between pt-3 border-t border-gray-100 text-xs gap-3 min-w-0 w-full overflow-hidden">
+                    <span className="text-gray-400 font-mono text-[11px] shrink-0">
                       Published: {item.published_at ? item.published_at.slice(0, 10) : "Recent"}
                     </span>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
                       {item.parsed_sources && item.parsed_sources.length > 0 ? (
                         item.parsed_sources.map((src, sIdx) => (
                           <a
@@ -1002,10 +1316,11 @@ export default function PublicDashboard() {
                             href={src.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-[#F1B24A]/15 hover:bg-[#F1B24A] text-[#164A41] font-mono font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full transition-all flex items-center gap-1"
+                            className="bg-[#F1B24A]/15 hover:bg-[#F1B24A] text-[#164A41] font-mono font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full transition-all inline-flex items-center gap-1 truncate max-w-[200px] shrink-0"
+                            title={src.title || src.source}
                           >
-                            <span>Read on {src.source}</span>
-                            <span>↗</span>
+                            <span className="truncate">Read on {src.source}</span>
+                            <span className="shrink-0 text-[10px]">↗</span>
                           </a>
                         ))
                       ) : (
@@ -1016,99 +1331,104 @@ export default function PublicDashboard() {
                 </article>
               ))}
             </div>
-          ) : (
-            <div className="bg-white border border-[#164A41]/10 rounded-2xl p-8 text-center text-sm text-[#4D774E] font-mono">
-              No Priority Intelligence items recorded in this cycle.
-            </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* ================================================================= */}
         {/* SECTION 2: SECTOR BREAKDOWN                                       */}
         {/* ================================================================= */}
-        <section id="sectors" className="scroll-mt-28">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#164A41]/10 pb-3 mb-6 gap-2">
-            <div>
-              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#9DC88D]/20 text-[#164A41] text-[10px] font-mono font-bold uppercase tracking-wider mb-1">
-                <span>Domain Breakdown</span>
-              </div>
-              <h2
-                className="text-2xl sm:text-3xl font-medium text-[#164A41]"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-              >
-                Sector-by-Sector Intelligence
-              </h2>
-            </div>
-            <span className="text-xs text-[#4D774E] font-mono">Categorical Matrix</span>
-          </div>
-
-          <div className="space-y-8 sm:space-y-10">
-            {Object.entries(data.pillar_groups || {}).map(([pillarName, items]) => {
-              if (!items || items.length === 0) return null;
-              return (
-                <div key={pillarName} className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#164A41]"></span>
-                    <h3 className="text-sm sm:text-base font-bold font-mono uppercase tracking-wider text-[#164A41]">
-                      {pillarName}
-                    </h3>
-                    <span className="text-xs font-mono text-gray-400">({items.length})</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    {items.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-white rounded-2xl border border-[#164A41]/10 p-5 sm:p-6 shadow-[0_2px_12px_rgba(22,74,65,0.04)] hover:shadow-md hover:border-[#F1B24A]/40 transition-all flex flex-col justify-between"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-2.5">
-                            <span className="text-[10px] font-mono font-bold uppercase bg-[#164A41] text-white px-2.5 py-0.5 rounded-full">
-                              {item.primary_entity}
-                            </span>
-                            <span className="text-[10px] font-mono text-gray-400">
-                              {item.hype_vs_substance}
-                            </span>
-                          </div>
-                          <h4 className="text-base font-bold text-[#164A41] mb-2 leading-snug">
-                            {item.headline}
-                          </h4>
-                          <p className="text-xs sm:text-sm text-[#4D774E] font-light leading-relaxed mb-4">
-                            {item.what_happened}
-                          </p>
-                        </div>
-
-                        <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] font-mono">
-                          <span className="text-gray-400 text-[10px]">Verified Source</span>
-                          <div className="flex gap-2">
-                            {item.parsed_sources?.map((src, sIdx) => (
-                              <a
-                                key={sIdx}
-                                href={src.link}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-[#F1B24A] hover:text-[#164A41] font-bold uppercase transition flex items-center gap-1"
-                              >
-                                <span>{src.source}</span>
-                                <span>↗</span>
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+        {Object.keys(filteredPillars).length > 0 && (
+          <section id="sectors" className="scroll-mt-28 w-full max-w-full overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#164A41]/10 pb-3 mb-6 gap-2">
+              <div>
+                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#9DC88D]/20 text-[#164A41] text-[10px] font-mono font-bold uppercase tracking-wider mb-1">
+                  <span>Domain Breakdown</span>
                 </div>
-              );
-            })}
-          </div>
-        </section>
+                <h2
+                  className="text-2xl sm:text-3xl font-medium text-[#164A41]"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  Sector-by-Sector Intelligence
+                </h2>
+              </div>
+              <span className="text-xs text-[#4D774E] font-mono">
+                {Object.values(filteredPillars).reduce((acc, curr) => acc + curr.length, 0)} Categorical Signals
+              </span>
+            </div>
+
+            <div className="space-y-8 sm:space-y-10 w-full max-w-full">
+              {Object.entries(filteredPillars).map(([pillarName, items]) => {
+                if (!items || items.length === 0) return null;
+                return (
+                  <div key={pillarName} className="space-y-4 w-full max-w-full">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#164A41]"></span>
+                      <h3 className="text-sm sm:text-base font-bold font-mono uppercase tracking-wider text-[#164A41]">
+                        {pillarName}
+                      </h3>
+                      <span className="text-xs font-mono text-gray-400">({items.length})</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-0">
+                      {items.map((item, idx) => (
+                        <div
+                          key={item.id || item.cluster_id || idx}
+                          className="bg-white rounded-2xl border border-[#164A41]/10 p-5 sm:p-6 shadow-[0_2px_12px_rgba(22,74,65,0.04)] hover:shadow-md hover:border-[#F1B24A]/40 transition-all flex flex-col justify-between w-full max-w-full min-w-0 overflow-hidden box-border"
+                        >
+                          <div className="min-w-0 w-full">
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 min-w-0 w-full">
+                              <span className="text-[10px] font-mono font-bold uppercase bg-[#164A41] text-white px-2.5 py-0.5 rounded-full truncate max-w-[200px]">
+                                {item.primary_entity}
+                              </span>
+                              <span className="text-[10px] font-mono text-gray-400 shrink-0">
+                                {item.hype_vs_substance}
+                              </span>
+                            </div>
+                            <h4 className="text-base font-bold text-[#164A41] mb-2 leading-snug break-words hyphens-auto min-w-0">
+                              {item.headline}
+                            </h4>
+                            <p className="text-xs sm:text-sm text-[#4D774E] font-light leading-relaxed mb-4 break-words min-w-0">
+                              {item.what_happened}
+                            </p>
+                          </div>
+
+                          <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono min-w-0 w-full overflow-hidden">
+                            <span className="text-gray-400 text-[10px] shrink-0">Verified Source</span>
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0 max-w-full">
+                              {item.parsed_sources && item.parsed_sources.length > 0 ? (
+                                item.parsed_sources.map((src, sIdx) => (
+                                  <a
+                                    key={sIdx}
+                                    href={src.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#d97706] hover:text-[#164A41] font-bold uppercase transition inline-flex items-center gap-1 text-[10px] sm:text-[11px] bg-[#F1B24A]/15 hover:bg-[#F1B24A]/30 px-2.5 py-1 rounded-full truncate max-w-[140px] sm:max-w-[180px] shrink-0"
+                                    title={src.source}
+                                  >
+                                    <span className="truncate">{src.source}</span>
+                                    <span className="shrink-0 text-[10px]">↗</span>
+                                  </a>
+                                ))
+                              ) : (
+                                <span className="text-[10px] text-gray-400 font-mono">Urivalent Direct</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* ================================================================= */}
         {/* SECTION 3: REPOSITORY & RESEARCH RADAR                            */}
         {/* ================================================================= */}
-        <section id="radar" className="scroll-mt-28">
-          <div className="bg-white/95 backdrop-blur-sm border border-[#164A41]/10 rounded-2xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(22,74,65,0.06)]">
+        <section id="radar" className="scroll-mt-28 w-full max-w-full overflow-hidden">
+          <div className="bg-white/95 backdrop-blur-sm border border-[#164A41]/10 rounded-2xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(22,74,65,0.06)] w-full max-w-full box-border">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#164A41]/10 pb-4 mb-6 gap-2">
               <div>
                 <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#164A41]/10 text-[#164A41] text-[10px] font-mono font-bold uppercase tracking-wider mb-1">
@@ -1126,33 +1446,33 @@ export default function PublicDashboard() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-full min-w-0">
               {/* GitHub Repos */}
-              <div>
+              <div className="w-full max-w-full min-w-0">
                 <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#164A41] border-b border-gray-100 pb-2.5 mb-3 flex items-center justify-between">
                   <span>⭐ High-Velocity Repositories</span>
                   <span className="text-gray-400 font-normal">GitHub</span>
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-3 w-full max-w-full">
                   {data.trending_repos?.map((repo) => (
                     <div
                       key={repo.repo_name}
-                      className="bg-[#FAF9F5] border border-[#164A41]/10 rounded-xl p-4 shadow-2xs hover:border-[#F1B24A] hover:bg-white transition"
+                      className="bg-[#FAF9F5] border border-[#164A41]/10 rounded-xl p-4 shadow-2xs hover:border-[#F1B24A] hover:bg-white transition w-full max-w-full min-w-0 overflow-hidden break-words box-border"
                     >
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
                         <a
                           href={repo.repo_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sm font-bold text-[#164A41] hover:text-[#F1B24A] transition font-mono"
+                          className="text-sm font-bold text-[#164A41] hover:text-[#F1B24A] transition font-mono truncate min-w-0"
                         >
                           {repo.repo_name} ↗
                         </a>
-                        <span className="text-[11px] font-mono font-bold text-[#4D774E]">
+                        <span className="text-[11px] font-mono font-bold text-[#4D774E] shrink-0">
                           ★ {repo.total_stars.toLocaleString()} (+{repo.stars_gained})
                         </span>
                       </div>
-                      <p className="text-xs text-[#4D774E] leading-relaxed line-clamp-2">
+                      <p className="text-xs text-[#4D774E] leading-relaxed line-clamp-2 break-words">
                         {repo.description}
                       </p>
                       <div className="text-[10px] text-gray-400 mt-2 font-mono uppercase">
@@ -1164,33 +1484,33 @@ export default function PublicDashboard() {
               </div>
 
               {/* Trending Preprints */}
-              <div>
+              <div className="w-full max-w-full min-w-0">
                 <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#164A41] border-b border-gray-100 pb-2.5 mb-3 flex items-center justify-between">
                   <span>📑 Trending Preprints</span>
                   <span className="text-gray-400 font-normal">arXiv & HF</span>
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-3 w-full max-w-full">
                   {data.trending_papers?.map((p, idx) => (
                     <div
                       key={idx}
-                      className="bg-[#FAF9F5] border border-[#164A41]/10 rounded-xl p-4 shadow-2xs hover:border-[#F1B24A] hover:bg-white transition"
+                      className="bg-[#FAF9F5] border border-[#164A41]/10 rounded-xl p-4 shadow-2xs hover:border-[#F1B24A] hover:bg-white transition w-full max-w-full min-w-0 overflow-hidden break-words box-border"
                     >
-                      <div className="mb-1.5">
+                      <div className="mb-1.5 min-w-0">
                         <a
                           href={p.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs font-bold text-[#164A41] hover:text-[#F1B24A] transition leading-snug block"
+                          className="text-xs font-bold text-[#164A41] hover:text-[#F1B24A] transition leading-snug block break-words min-w-0"
                         >
                           {p.title} ↗
                         </a>
                       </div>
-                      <p className="text-[11px] text-[#4D774E] line-clamp-2 mb-2 leading-relaxed">
+                      <p className="text-[11px] text-[#4D774E] line-clamp-2 mb-2 leading-relaxed break-words">
                         {p.summary}
                       </p>
                       <div className="flex items-center justify-between text-[10px] text-[#F1B24A] font-bold uppercase font-mono">
-                        <span>{p.source}</span>
-                        {p.upvotes ? <span>▲ {p.upvotes} Upvotes</span> : null}
+                        <span className="truncate max-w-[180px]">{p.source}</span>
+                        {p.upvotes ? <span className="shrink-0">▲ {p.upvotes} Upvotes</span> : null}
                       </div>
                     </div>
                   ))}
@@ -1204,7 +1524,7 @@ export default function PublicDashboard() {
       {/* ================================================================== */}
       {/* FOOTER — SLEEK DIRECTORY & SUBSCRIBE PIPELINE                      */}
       {/* ================================================================== */}
-      <footer className="bg-[#0C241C] border-t border-[#9DC88D]/15 pt-10 sm:pt-14 pb-8 px-6 sm:px-10 lg:px-16 text-white mt-auto">
+      <footer className="bg-[#0C241C] border-t border-[#9DC88D]/15 pt-10 sm:pt-14 pb-8 px-6 sm:px-10 lg:px-16 text-white mt-auto w-full max-w-full overflow-hidden">
         <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Column 1: Brand & Identity (4 cols) */}
           <div className="md:col-span-4 space-y-3">
@@ -1219,10 +1539,10 @@ export default function PublicDashboard() {
                 />
               </div>
             </Link>
-            <p className="text-[11px] text-white/60 leading-relaxed max-w-sm font-light">
+            <p className="text-[11px] text-white/80 leading-relaxed max-w-sm font-light">
               Autonomously tracking frontier models, silicon architecture, sovereign compute infrastructure, agent tooling, and capital markets.
             </p>
-            <div className="text-[10px] font-mono text-white/40 pt-1">
+            <div className="text-[10px] font-mono text-white/70 pt-1">
               &copy; {new Date().getFullYear()} Urivalent. All rights reserved.
             </div>
           </div>
@@ -1232,16 +1552,16 @@ export default function PublicDashboard() {
             <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#F1B24A] font-semibold block mb-3">
               NAVIGATION
             </span>
-            <ul className="space-y-2 text-xs font-mono text-white/80">
+            <ul className="space-y-2 text-xs font-mono text-white/90">
               <li>
                 <Link href="/" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Overview</span>
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>About</span>
                 </Link>
               </li>
@@ -1253,25 +1573,25 @@ export default function PublicDashboard() {
               </li>
               <li>
                 <Link href="/terms" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Terms &amp; Conditions</span>
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Privacy Policy</span>
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
+                  <span className="text-white/60 text-[10px]">›</span>
                   <span>Contact Desk</span>
                 </Link>
               </li>
               <li>
                 <Link href="/admin" className="text-[#F1B24A] hover:underline font-bold inline-flex items-center gap-1.5">
-                  <span className="text-[#F1B24A]/50 text-[10px]">›</span>
+                  <span className="text-[#F1B24A]/80 text-[10px]">›</span>
                   <span>Admin Console ↗</span>
                 </Link>
               </li>
@@ -1286,13 +1606,13 @@ export default function PublicDashboard() {
                 DISPATCH BRIEFING
               </span>
             </div>
-            <h4
+            <h3
               className="text-base sm:text-lg font-medium tracking-tight text-white"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               Subscribe to Sovereign Signals
-            </h4>
-            <p className="text-[11px] text-white/65 font-light leading-relaxed max-w-md">
+            </h3>
+            <p className="text-[11px] text-white/80 font-light leading-relaxed max-w-md">
               Daily synthesized intelligence on frontier AI models, silicon bottlenecks, and sovereign compute infrastructure.
             </p>
             <div className="pt-1 max-w-md">
