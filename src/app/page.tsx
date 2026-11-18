@@ -1,9 +1,139 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import SubscribeForm from "@/components/SubscribeForm";
+
+const SECTOR_CONFIGS = [
+  {
+    id: "01",
+    name: "Silicon & Nanotech",
+    shortName: "Silicon",
+    tag: "SILICON & NANOTECH",
+    canonicalPillar: "Silicon & Nanotech",
+    defaultTickerSymbols: ["NVDA", "ASML", "TSM", "ARM"],
+    fallback: {
+      headline: "Chiplet economics move from roadmap to near-term constraint",
+      excerpt: "Advanced packaging capacity and high-bandwidth memory co-design emerge as the first-order bottleneck for next-gen accelerator volume.",
+      technical: "2.5D integration and hybrid bonding throughput are dictating production schedules ahead of leading-edge wafer fab allocations.",
+      impact: "Premiums expand for diversified back-end supply chains. Capital expenditures shift toward dedicated packaging cleanrooms.",
+      time: "14m ago",
+      ticker: "NVDA -2.12",
+      stocks: [
+        { symbol: "NVDA", change: -2.12 },
+        { symbol: "ASML", change: -1.68 },
+        { symbol: "TSM", change: -3.68 },
+        { symbol: "ARM", change: 6.69 },
+      ],
+    },
+  },
+  {
+    id: "02",
+    name: "Energy & Infra",
+    shortName: "Energy",
+    tag: "ENERGY & INFRA",
+    canonicalPillar: "Energy & Infra",
+    defaultTickerSymbols: ["CEG", "VRT", "NEE", "SPCX"],
+    fallback: {
+      headline: "Hyperscale baseload agreements accelerate in PJM interconnect",
+      excerpt: "Dedicated nuclear and geothermal long-term power purchase agreements pass regulatory review for gigawatt-class cluster campuses.",
+      technical: "Co-located microgrid generation eliminates interconnection queue delays, locking in sub-5ms latency to regional fiber backbones.",
+      impact: "Power density constraints reward facilities with behind-the-meter baseload contracts over raw land acquisitions.",
+      time: "1h ago",
+      ticker: "CEG +10.46",
+      stocks: [
+        { symbol: "CEG", change: 10.46 },
+        { symbol: "VRT", change: 9.63 },
+        { symbol: "NEE", change: -0.10 },
+      ],
+    },
+  },
+  {
+    id: "03",
+    name: "Models & Research",
+    shortName: "Models",
+    tag: "MODELS & RESEARCH",
+    canonicalPillar: "Models & Research",
+    defaultTickerSymbols: ["GOOGL", "META", "MSFT", "TSLA"],
+    fallback: {
+      headline: "Test-time compute scaling laws demonstrate super-linear gains",
+      excerpt: "Dynamic search budgets and automated verification loops outperform brute parameter scaling on complex scientific benchmarks.",
+      technical: "Monte Carlo tree search coupled with domain-specific verifiers reduces error rates exponentially without weight updates.",
+      impact: "Inference compute allocations begin surpassing pre-training cluster CAPEX in leading frontier labs.",
+      time: "38m ago",
+      ticker: "META +5.12",
+      stocks: [
+        { symbol: "META", change: 5.12 },
+        { symbol: "MSFT", change: 2.75 },
+        { symbol: "GOOGL", change: 1.18 },
+        { symbol: "TSLA", change: 5.54 },
+      ],
+    },
+  },
+  {
+    id: "04",
+    name: "Agents & Tooling",
+    shortName: "Agents",
+    tag: "AGENTS & TOOLING",
+    canonicalPillar: "Agents & Tooling",
+    defaultTickerSymbols: ["NET", "NOW", "PATH"],
+    fallback: {
+      headline: "Autonomous workflow orchestrators achieve multi-turn code synthesis parity",
+      excerpt: "Frontier code-synthesis agents and embodied tool use demonstrate reliable long-horizon multi-step tool execution.",
+      technical: "Deterministic sandboxing coupled with runtime schema enforcement reduces hallucinated API invocation rates below 0.2%.",
+      impact: "Enterprise software margins re-rate as workflow agent orchestration replaces repetitive developer seat licenses.",
+      time: "2h ago",
+      ticker: "NET +9.30",
+      stocks: [
+        { symbol: "NET", change: 9.30 },
+        { symbol: "NOW", change: 0.77 },
+        { symbol: "PATH", change: -0.15 },
+      ],
+    },
+  },
+  {
+    id: "05",
+    name: "Capital & Markets",
+    shortName: "Capital",
+    tag: "CAPITAL & MARKETS",
+    canonicalPillar: "Capital & Markets",
+    defaultTickerSymbols: ["BX", "SFTBY", "COIN"],
+    fallback: {
+      headline: "Private infrastructure funds deploy $200B+ into compute debt vehicles",
+      excerpt: "Tier-1 asset managers structure dedicated asset-backed compute credit facilities to fund gigawatt campus data centers.",
+      technical: "Equipment securitization models treat high-density accelerator clusters as depreciating yield-generating industrial utilities.",
+      impact: "Hyperscalers de-lever public balance sheets by shifting physical asset ownership into private capital consortiums.",
+      time: "3h ago",
+      ticker: "BX +3.81",
+      stocks: [
+        { symbol: "BX", change: 3.81 },
+        { symbol: "SFTBY", change: 2.35 },
+        { symbol: "COIN", change: 0.99 },
+      ],
+    },
+  },
+  {
+    id: "06",
+    name: "Policy & Sovereignty",
+    shortName: "Policy",
+    tag: "POLICY & SOVEREIGNTY",
+    canonicalPillar: "Policy & Sovereignty",
+    defaultTickerSymbols: ["PLTR", "BAH"],
+    fallback: {
+      headline: "National compute reserves mandate defense-grade sovereign cluster isolation",
+      excerpt: "Strategic trade restrictions and sovereign AI regulatory doctrines enforce physical data sovereignty across allied jurisdictions.",
+      technical: "Air-gapped verification pipelines and cryptographic hardware provenance attestation become mandatory for frontier defense weights.",
+      impact: "Pure-play state tech suppliers and sovereign data operators capture dedicated defense appropriations.",
+      time: "4h ago",
+      ticker: "PLTR +5.50",
+      stocks: [
+        { symbol: "PLTR", change: 5.50 },
+        { symbol: "BAH", change: 1.58 },
+      ],
+    },
+  },
+];
 
 export default function LandingPage() {
   const [navVisible, setNavVisible] = useState(true);
@@ -13,42 +143,149 @@ export default function LandingPage() {
   const [activeSector, setActiveSector] = useState(0);
   const [isHeroIdle, setIsHeroIdle] = useState(false);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [feedData, setFeedData] = useState<any>(null);
 
-  const wireSectors = [
-    {
-      name: "Silicon & Nanotech",
-      tag: "SILICON & NANOTECH",
-      score: "SIGNAL 9.4",
-      time: "14m ago",
-      headline: "Chiplet economics move from roadmap to near-term constraint",
-      excerpt: "Advanced packaging capacity and high-bandwidth memory co-design emerge as the first-order bottleneck for next-gen accelerator volume.",
-      technical: "2.5D integration and hybrid bonding throughput are dictating production schedules ahead of leading-edge wafer fab allocations.",
-      impact: "Premiums expand for diversified back-end supply chains. Capital expenditures shift toward dedicated packaging cleanrooms.",
-      ticker: "TSM +1.05",
-    },
-    {
-      name: "Energy & Infra",
-      tag: "ENERGY & INFRA",
-      score: "SIGNAL 9.2",
-      time: "1h ago",
-      headline: "Hyperscale baseload agreements accelerate in PJM interconnect",
-      excerpt: "Dedicated nuclear and geothermal long-term power purchase agreements pass regulatory review for gigawatt-class cluster campuses.",
-      technical: "Co-located microgrid generation eliminates interconnection queue delays, locking in sub-5ms latency to regional fiber backbones.",
-      impact: "Power density constraints reward facilities with behind-the-meter baseload contracts over raw land acquisitions.",
-      ticker: "GRID +3.40",
-    },
-    {
-      name: "Models & Research",
-      tag: "MODELS & RESEARCH",
-      score: "SIGNAL 8.9",
-      time: "38m ago",
-      headline: "Test-time compute scaling laws demonstrate super-linear gains",
-      excerpt: "Dynamic search budgets and automated verification loops outperform brute parameter scaling on complex scientific benchmarks.",
-      technical: "Monte Carlo tree search coupled with domain-specific verifiers reduces error rates exponentially without weight updates.",
-      impact: "Inference compute allocations begin surpassing pre-training cluster CAPEX in leading frontier labs.",
-      ticker: "NVDA +2.85",
-    },
-  ];
+  // Load live feed to power real-time wire preview
+  useEffect(() => {
+    async function loadFeed() {
+      try {
+        const res = await fetch("/api/feed", { cache: "no-store" });
+        if (res.ok) {
+          const json = await res.json();
+          setFeedData(json);
+        }
+      } catch (err) {
+        console.warn("[landing] Could not fetch live feed:", err);
+      }
+    }
+    loadFeed();
+  }, []);
+
+  // Compute live wire sectors matching real intelligence across all 6 sectors
+  const wireSectors = useMemo(() => {
+    const normalizePillar = (p?: string) => {
+      if (!p) return "";
+      const clean = p.replace(/^\[/, "").replace(/\]$/, "").toUpperCase();
+      if (clean.includes("SILICON") || clean.includes("NANOTECH")) return "SILICON & NANOTECH";
+      if (clean.includes("ENERGY") || clean.includes("INFRA") || clean.includes("SPACE") || clean.includes("POWER")) return "ENERGY & INFRA";
+      if (clean.includes("MODEL") || clean.includes("RESEARCH")) return "MODELS & RESEARCH";
+      if (clean.includes("AGENT") || clean.includes("TOOL") || clean.includes("ROBOT")) return "AGENTS & TOOLING";
+      if (clean.includes("CAPITAL") || clean.includes("MARKET")) return "CAPITAL & MARKETS";
+      if (clean.includes("POLICY") || clean.includes("SOVEREIGN") || clean.includes("DEFENSE")) return "POLICY & SOVEREIGNTY";
+      return clean;
+    };
+
+    return SECTOR_CONFIGS.map((cfg) => {
+      const targetPillar = normalizePillar(cfg.canonicalPillar);
+      let matchedItem: any = null;
+
+      if (feedData) {
+        // 1. Look in tier1_items first (highest priority breakthroughs)
+        if (Array.isArray(feedData.tier1_items)) {
+          matchedItem = feedData.tier1_items.find(
+            (it: any) => normalizePillar(it.pillar_category) === targetPillar
+          );
+        }
+
+        // 2. If not found in tier1, look in pillar_groups
+        if (!matchedItem && feedData.pillar_groups) {
+          for (const [key, items] of Object.entries(feedData.pillar_groups)) {
+            if (normalizePillar(key) === targetPillar && Array.isArray(items) && items.length > 0) {
+              matchedItem = items[0];
+              break;
+            }
+          }
+        }
+      }
+
+      // Extract real stocks for this specific sector from feedData.market_tickers
+      const sectorStocks: Array<{ symbol: string; change: string; isPositive: boolean; isNegative: boolean }> = [];
+      if (feedData?.market_tickers && Array.isArray(feedData.market_tickers)) {
+        feedData.market_tickers.forEach((item: any) => {
+          const sym = String(item.ticker || item.symbol || "").toUpperCase();
+          const cat = normalizePillar(item.category || "");
+          const isCategoryMatch = cat && (cat === targetPillar || cat.includes(cfg.shortName.toUpperCase()));
+          const isSymbolMatch = cfg.defaultTickerSymbols.map((s: string) => s.toUpperCase()).includes(sym);
+
+          if ((isCategoryMatch || isSymbolMatch) && !item.is_private) {
+            const val = typeof item.daily_change_pct === "number"
+              ? item.daily_change_pct
+              : (typeof item.change_pct === "number" ? item.change_pct : (typeof item.change === "number" ? item.change : 0));
+            const sign = val > 0 ? "+" : "";
+            if (!sectorStocks.some((s) => s.symbol === sym)) {
+              sectorStocks.push({
+                symbol: sym,
+                change: `${sign}${val.toFixed(2)}`,
+                isPositive: val > 0,
+                isNegative: val < 0,
+              });
+            }
+          }
+        });
+      }
+
+      const finalStocks = sectorStocks.length > 0
+        ? sectorStocks.slice(0, 4)
+        : cfg.fallback.stocks.map((s) => ({
+            symbol: s.symbol,
+            change: `${s.change > 0 ? "+" : ""}${s.change.toFixed(2)}`,
+            isPositive: s.change > 0,
+            isNegative: s.change < 0,
+          }));
+
+      const primaryTicker = finalStocks.length > 0
+        ? `${finalStocks[0].symbol} ${finalStocks[0].change}`
+        : cfg.fallback.ticker;
+
+      if (matchedItem) {
+        let timeStr = "Recent";
+        if (matchedItem.published_at) {
+          try {
+            const pubDate = new Date(matchedItem.published_at);
+            const diffHours = Math.floor((Date.now() - pubDate.getTime()) / (1000 * 60 * 60));
+            if (diffHours < 1) {
+              const diffMins = Math.max(5, Math.floor((Date.now() - pubDate.getTime()) / (1000 * 60)));
+              timeStr = `${diffMins}m ago`;
+            } else if (diffHours < 24) {
+              timeStr = `${diffHours}h ago`;
+            } else {
+              timeStr = pubDate.toISOString().slice(0, 10);
+            }
+          } catch {
+            timeStr = "Recent";
+          }
+        }
+
+        return {
+          id: cfg.id,
+          name: cfg.name,
+          shortName: cfg.shortName,
+          tag: cfg.tag,
+          time: timeStr,
+          headline: matchedItem.headline || cfg.fallback.headline,
+          excerpt: matchedItem.what_happened || cfg.fallback.excerpt,
+          technical: matchedItem.technical_summary || cfg.fallback.technical,
+          impact: matchedItem.strategic_implication || cfg.fallback.impact,
+          ticker: primaryTicker,
+          stocks: finalStocks,
+        };
+      }
+
+      return {
+        id: cfg.id,
+        name: cfg.name,
+        shortName: cfg.shortName,
+        tag: cfg.tag,
+        time: cfg.fallback.time,
+        headline: cfg.fallback.headline,
+        excerpt: cfg.fallback.excerpt,
+        technical: cfg.fallback.technical,
+        impact: cfg.fallback.impact,
+        ticker: primaryTicker,
+        stocks: finalStocks,
+      };
+    });
+  }, [feedData]);
 
   const pillarsData = [
     {
@@ -705,12 +942,12 @@ export default function LandingPage() {
               {/* Desktop Only: Interactive Core Intelligence Beats Selector */}
               <div className="hidden md:block mt-8">
                 <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#164A41]/75 font-semibold mb-3">
-                  Core Intelligence Beats
+                  Core Intelligence Beats (6 Sectors)
                 </div>
                 <div className="space-y-2">
                   {wireSectors.map((sector, i) => (
                     <button
-                      key={i}
+                      key={sector.id}
                       type="button"
                       onClick={() => setActiveSector(i)}
                       className={`w-full text-left px-4 py-3 rounded-xl border transition-all flex items-center justify-between group ${
@@ -719,19 +956,19 @@ export default function LandingPage() {
                           : "bg-white/80 hover:bg-white text-[#164A41] border-[#164A41]/12 hover:border-[#164A41]/25"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <span
-                          className={`text-[10px] font-mono font-bold ${
+                          className={`text-[10px] font-mono font-bold shrink-0 ${
                             activeSector === i ? "text-[#F1B24A]" : "text-[#8A5200]"
                           }`}
                         >
-                          0{i + 1}
+                          {sector.id}
                         </span>
-                        <span className="text-xs font-mono uppercase tracking-wider font-semibold">
+                        <span className="text-xs font-mono uppercase tracking-wider font-semibold truncate">
                           {sector.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <span
                           className={`text-[10px] font-mono ${
                             activeSector === i ? "text-[#FAF9F5]/70" : "text-[#164A41]/60"
@@ -760,13 +997,13 @@ export default function LandingPage() {
               {/* MOBILE VIEW (md:hidden): High-End Interactive Dispatch with Sector Tabs */}
               <div className="md:hidden">
                 {/* 1. Sleek Segmented Sector Selector */}
-                <div className="flex items-center gap-1 p-1 bg-[#164A41]/[0.05] rounded-xl border border-[#164A41]/10 mb-3.5">
+                <div className="flex items-center gap-1.5 p-1.5 bg-[#164A41]/[0.05] rounded-xl border border-[#164A41]/10 mb-3.5 overflow-x-auto no-scrollbar scroll-smooth">
                   {wireSectors.map((sector, i) => (
                     <button
-                      key={i}
+                      key={sector.id}
                       type="button"
                       onClick={() => setActiveSector(i)}
-                      className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-[9px] font-mono uppercase tracking-wider transition-all inline-flex items-center justify-center text-center whitespace-nowrap ${
+                      className={`min-h-[42px] py-2 px-3 rounded-lg text-[10px] font-mono uppercase tracking-wider transition-all inline-flex items-center justify-center text-center whitespace-nowrap shrink-0 ${
                         activeSector === i
                           ? "bg-[#164A41] text-[#FAF9F5] shadow-sm font-semibold"
                           : "text-[#164A41]/80 hover:text-[#164A41] font-medium"
@@ -778,67 +1015,81 @@ export default function LandingPage() {
                 </div>
 
                 {/* 2. Mobile Wire Dispatch Card */}
-                <div className="bg-white rounded-2xl border border-[#164A41]/12 p-4 shadow-[0_6px_24px_rgba(22,74,65,0.05)]">
-                  {/* Top Bar: Wire Telemetry + Signal Badge */}
-                  <div className="flex items-center justify-between pb-2 border-b border-[#164A41]/10 text-xs font-mono">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#F1B24A] animate-pulse" />
-                      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#164A41]">
-                        {wireSectors[activeSector].tag}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] text-[#164A41]/75 font-mono">
-                        {wireSectors[activeSector].time}
-                      </span>
-                      <span className="border border-[#8A5200] bg-[#F1B24A]/15 text-[#8A5200] font-mono font-bold text-[10px] px-2 py-0.5 rounded-[2px]">
-                        {wireSectors[activeSector].score}
-                      </span>
-                    </div>
+                <div className="bg-white rounded-2xl border border-[#164A41]/12 p-4 shadow-[0_6px_24px_rgba(22,74,65,0.05)] overflow-hidden">
+                  {/* Top Bar: Sector Tag + Freshness Time */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-[#164A41]/10 text-xs font-mono">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#164A41] truncate">
+                      {wireSectors[activeSector]?.tag || wireSectors[0].tag}
+                    </span>
+                    <span className="text-[9px] text-[#164A41]/75 font-mono">
+                      {wireSectors[activeSector]?.time || wireSectors[0].time}
+                    </span>
+                  </div>
+
+                  {/* Sector Real Stocks Ticker Strip on Mobile */}
+                  <div className="flex items-center gap-3 py-2 border-b border-[#164A41]/10 text-[10px] font-mono overflow-x-auto no-scrollbar">
+                    {(wireSectors[activeSector]?.stocks || wireSectors[0].stocks).map(
+                      (t: { symbol: string; change: string; isPositive: boolean; isNegative: boolean }, idx: number) => (
+                        <span key={idx} className="shrink-0">
+                          <strong className="text-[#164A41]">{t.symbol}</strong>{" "}
+                          <span
+                            className={
+                              t.isPositive
+                                ? "text-[#2C5E54] font-semibold"
+                                : t.isNegative
+                                ? "text-[#B91C1C] font-semibold"
+                                : "text-[#164A41]/80"
+                            }
+                          >
+                            {t.change}
+                          </span>
+                        </span>
+                      )
+                    )}
                   </div>
 
                   {/* Story Headline */}
                   <h3
-                    className="text-base font-bold text-[#164A41] leading-snug mt-3 mb-2 font-serif"
+                    className="text-base font-bold text-[#164A41] leading-snug mt-3 mb-2 font-serif break-words"
                     style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                   >
-                    {wireSectors[activeSector].headline}
+                    {wireSectors[activeSector]?.headline || wireSectors[0].headline}
                   </h3>
 
                   {/* Lead Excerpt */}
-                  <p className="text-xs text-[#2C5E54] leading-relaxed mb-3 font-normal">
-                    {wireSectors[activeSector].excerpt}
+                  <p className="text-xs text-[#2C5E54] leading-relaxed mb-3 font-normal break-words">
+                    {wireSectors[activeSector]?.excerpt || wireSectors[0].excerpt}
                   </p>
 
                   {/* Editorial Synthesis: Technical vs Market */}
-                  <div className="border border-[#164A41]/10 rounded-xl p-3 bg-[#FAF9F5] space-y-2 mb-3 text-[11px]">
+                  <div className="border border-[#164A41]/10 rounded-xl p-3 bg-[#FAF9F5] space-y-2 mb-3 text-[11px] overflow-hidden">
                     <div>
                       <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#164A41] block mb-0.5">
                         TECHNICAL CORE
                       </span>
-                      <p className="text-[#2C5E54] leading-relaxed font-normal">
-                        {wireSectors[activeSector].technical}
+                      <p className="text-[#2C5E54] leading-relaxed font-normal break-words">
+                        {wireSectors[activeSector]?.technical || wireSectors[0].technical}
                       </p>
                     </div>
                     <div className="pt-2 border-t border-[#164A41]/10">
                       <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#8A5200] block mb-0.5">
                         MARKET IMPACT
                       </span>
-                      <p className="text-[#2C5E54] leading-relaxed font-normal">
-                        {wireSectors[activeSector].impact}
+                      <p className="text-[#2C5E54] leading-relaxed font-normal break-words">
+                        {wireSectors[activeSector]?.impact || wireSectors[0].impact}
                       </p>
                     </div>
                   </div>
 
                   {/* Card Footer: Live Ticker Indicator + Feed Link */}
                   <div className="flex items-center justify-between pt-2 border-t border-[#164A41]/10 text-[10px] font-mono">
-                    <div className="flex items-center gap-1.5 text-[#164A41]/80">
+                    <div className="flex items-center gap-1.5 text-[#164A41]/80 truncate">
                       <span className="text-[#164A41]/75 font-mono">Focus:</span>
-                      <strong className="text-[#164A41] font-semibold">{wireSectors[activeSector].ticker}</strong>
+                      <strong className="text-[#164A41] font-semibold">{wireSectors[activeSector]?.ticker || wireSectors[0].ticker}</strong>
                     </div>
                     <Link
                       href="/feeds"
-                      className="text-[#164A41] hover:text-[#8A5200] font-bold uppercase tracking-wider min-h-[44px] inline-flex items-center gap-1"
+                      className="text-[#164A41] hover:text-[#8A5200] font-bold uppercase tracking-wider min-h-[44px] inline-flex items-center gap-1 shrink-0"
                     >
                       <span>Explore Live Wire</span>
                       <span className="text-xs font-bold">↗</span>
@@ -847,136 +1098,106 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* DESKTOP VIEW (hidden md:block): Original Live Mockup Interface 100% UNTOUCHED */}
+              {/* DESKTOP VIEW (hidden md:block): Live Wire Dispatch Interface */}
               <div className="hidden md:block">
                 <div className="bg-white rounded-xl shadow-lg border border-[#164A41]/15 overflow-hidden">
-                {/* 1. Window Frame Bar without icons */}
-                <div className="bg-[#F4F3EE] border-b border-[#164A41]/10 px-5 py-2.5 flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#164A41]/75 font-semibold">
-                    URIVALENT / INTELLIGENCE WIRE
-                  </span>
-                  <span className="text-[9px] font-mono uppercase tracking-widest text-[#164A41]/50">
-                    LIVE DISPATCH PREVIEW
-                  </span>
-                </div>
-
-                {/* 2. Compute & Capital Subheader */}
-                <div className="bg-[#FAF9F5] border-b border-[#164A41]/10 px-5 py-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-                  <div className="flex items-center gap-4 text-[#164A41]">
-                    <span className="font-bold tracking-wider uppercase text-[10px] text-[#4D774E]">
-                      COMPUTE &amp; CAPITAL
-                    </span>
-                    <span className="text-[11px]">
-                      <strong className="text-[#164A41]">NVDA</strong> +2.85
-                    </span>
-                    <span className="text-[11px]">
-                      <strong className="text-[#164A41]">TSM</strong> +1.05
-                    </span>
-                    <span className="text-[11px]">
-                      <strong className="text-[#164A41]">ASML</strong> -0.35
-                    </span>
-                  </div>
-
-                  <div className="bg-[#F1B24A] text-[#164A41] font-black text-[11px] px-2.5 py-0.5 rounded-[2px] flex items-center gap-1 shadow-sm">
-                    <span>18</span>
-                    <span className="text-[9px] uppercase font-bold tracking-wider">papers / day</span>
-                  </div>
-                </div>
-
-                {/* 3. Priority Intelligence Bar with Golden Line */}
-                <div className="px-5 pt-4 pb-1.5">
-                  <div className="flex items-center justify-between text-xs font-mono mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[#F1B24A]" />
-                      <span className="font-bold uppercase tracking-[0.18em] text-[#164A41] text-[10px]">
-                        PRIORITY INTELLIGENCE
+                  {/* 1. Dynamic Sector Stocks Subheader */}
+                  <div className="bg-[#FAF9F5] border-b border-[#164A41]/10 px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                    <div className="flex items-center gap-4 text-[#164A41] flex-wrap">
+                      <span className="font-bold tracking-wider uppercase text-[10px] text-[#4D774E]">
+                        {wireSectors[activeSector]?.tag || wireSectors[0].tag}
                       </span>
+                      {(wireSectors[activeSector]?.stocks || wireSectors[0].stocks).map(
+                        (t: { symbol: string; change: string; isPositive: boolean; isNegative: boolean }, idx: number) => (
+                          <span key={idx} className="text-[11px]">
+                            <strong className="text-[#164A41]">{t.symbol}</strong>{" "}
+                            <span
+                              className={
+                                t.isPositive
+                                  ? "text-[#2C5E54] font-semibold"
+                                  : t.isNegative
+                                  ? "text-[#B91C1C] font-semibold"
+                                  : "text-[#164A41]/80"
+                              }
+                            >
+                              {t.change}
+                            </span>
+                          </span>
+                        )
+                      )}
                     </div>
-                    <span className="text-[9px] uppercase tracking-wider text-[#164A41]/50 font-semibold">
-                      DEMO DATA · NOT LIVE
+                    <span className="text-[9px] text-[#164A41]/50 font-mono font-medium">
+                      {wireSectors[activeSector]?.time || wireSectors[0].time}
                     </span>
                   </div>
-                  {/* Distinct Solid Gold Line running across */}
-                  <div className="h-[2px] w-full bg-[#F1B24A] mb-3.5" />
-                </div>
 
-                {/* 4. Main Intelligence Story Card — Dynamically connected to activeSector */}
-                <div className="px-5 pb-5">
-                  {/* Category & Signal Score */}
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] font-mono uppercase tracking-widest text-[#4D774E] font-bold">
-                      {wireSectors[activeSector].tag}
-                    </span>
-                    <span className="border border-[#8A5200] bg-[#F1B24A]/15 text-[#8A5200] font-mono font-bold text-[11px] px-2 py-0.5 rounded-[2px]">
-                      {wireSectors[activeSector].score}
-                    </span>
-                  </div>
-
-                  {/* Headline */}
-                  <h3
-                    className="text-xl sm:text-2xl font-bold text-[#164A41] leading-tight mb-2"
-                    style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-                  >
-                    {wireSectors[activeSector].headline}
-                  </h3>
-
-                  {/* Excerpt */}
-                  <p className="text-xs text-[#2C5E54] leading-relaxed mb-3.5 font-normal">
-                    {wireSectors[activeSector].excerpt}
-                  </p>
-
-                  {/* Two-Column Technical vs Market Box */}
-                  <div className="border border-[#164A41]/15 rounded-lg p-3 sm:p-4 bg-[#FAF9F5] grid grid-cols-1 md:grid-cols-2 gap-3 mb-3.5">
-                    <div>
-                      <div className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#164A41] mb-1">
-                        TECHNICAL SUMMARY
-                      </div>
-                      <p className="text-[11px] text-[#2C5E54] leading-relaxed font-normal">
-                        {wireSectors[activeSector].technical}
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#8A5200] mb-1">
-                        MARKET IMPACT
-                      </div>
-                      <p className="text-[11px] text-[#2C5E54] leading-relaxed font-normal">
-                        {wireSectors[activeSector].impact}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Read the Full Feed Link */}
-                  <div>
-                    <Link
-                      href="/feeds"
-                      className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#164A41] hover:text-[#8A5200] transition-colors"
+                  {/* 2. Main Intelligence Story Card — Dynamically connected to activeSector */}
+                  <div className="p-6">
+                    {/* Headline */}
+                    <h3
+                      className="text-xl sm:text-2xl font-bold text-[#164A41] leading-tight mb-2.5 break-words"
+                      style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                     >
-                      <span>READ THE FULL FEED</span>
-                      <span className="text-xs">↗</span>
-                    </Link>
-                  </div>
-                </div>
+                      {wireSectors[activeSector]?.headline || wireSectors[0].headline}
+                    </h3>
 
-                {/* 5. Bottom 3-Column Sector Strip — Interactive Selector */}
-                <div className="border-t border-[#164A41]/15 bg-[#FAF9F5] grid grid-cols-3 divide-x divide-[#164A41]/15 font-mono text-xs">
+                    {/* Excerpt */}
+                    <p className="text-xs sm:text-[13px] text-[#2C5E54] leading-relaxed mb-4 font-normal break-words">
+                      {wireSectors[activeSector]?.excerpt || wireSectors[0].excerpt}
+                    </p>
+
+                    {/* Two-Column Technical vs Market Box */}
+                    <div className="border border-[#164A41]/15 rounded-lg p-3.5 sm:p-4 bg-[#FAF9F5] grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 overflow-hidden">
+                      <div>
+                        <div className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#164A41] mb-1">
+                          TECHNICAL SUMMARY
+                        </div>
+                        <p className="text-[11px] text-[#2C5E54] leading-relaxed font-normal break-words">
+                          {wireSectors[activeSector]?.technical || wireSectors[0].technical}
+                        </p>
+                      </div>
+
+                      <div>
+                        <div className="text-[9px] font-mono font-bold uppercase tracking-wider text-[#8A5200] mb-1">
+                          MARKET IMPACT
+                        </div>
+                        <p className="text-[11px] text-[#2C5E54] leading-relaxed font-normal break-words">
+                          {wireSectors[activeSector]?.impact || wireSectors[0].impact}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Read the Full Feed Link */}
+                    <div>
+                      <Link
+                        href="/feeds"
+                        className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#164A41] hover:text-[#8A5200] transition-colors"
+                      >
+                        <span>READ THE FULL FEED</span>
+                        <span className="text-xs">↗</span>
+                      </Link>
+                    </div>
+                  </div>
+
+                {/* 5. Bottom 6-Column Sector Strip — Interactive Selector */}
+                <div className="border-t border-[#164A41]/15 bg-[#FAF9F5] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-y lg:divide-y-0 divide-[#164A41]/15 font-mono text-xs">
                   {wireSectors.map((sector, i) => (
                     <button
-                      key={i}
+                      key={sector.id}
                       type="button"
                       onClick={() => setActiveSector(i)}
-                      className={`text-left px-5 py-3 transition-colors ${
+                      className={`text-left p-3 lg:px-4 lg:py-3 transition-colors ${
                         activeSector === i
-                          ? "bg-[#164A41]/[0.06] border-t-2 border-[#F1B24A] -mt-[1px]"
+                          ? "bg-[#164A41]/[0.08] border-t-2 border-[#F1B24A] -mt-[1px]"
                           : "hover:bg-[#164A41]/[0.02]"
                       }`}
                     >
-                      <span className="text-[9px] text-[#164A41]/50 block">0{i + 1}</span>
-                      <span className="text-[9px] font-bold text-[#4D774E] uppercase tracking-wider block">
+                      <span className="text-[9px] text-[#164A41]/50 block">{sector.id}</span>
+                      <span className="text-[9px] font-bold text-[#4D774E] uppercase tracking-wider block truncate" title={sector.tag}>
                         {sector.tag}
                       </span>
                       <span
-                        className={`text-[11px] font-bold mt-0.5 block ${
+                        className={`text-[10px] sm:text-[11px] font-bold mt-0.5 block truncate ${
                           activeSector === i ? "text-[#8A5200]" : "text-[#164A41]"
                         }`}
                       >
