@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import SubscribeForm from "@/components/SubscribeForm";
+import FooterNavigation from "@/components/FooterNavigation";
 
 const SECTOR_CONFIGS = [
   {
@@ -1298,56 +1299,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Column 2: Redirect Links rearranged into a list (3 cols) */}
-          <div className="md:col-span-3">
-            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#F1B24A] font-semibold block mb-3">
-              NAVIGATION
-            </span>
-            <ul className="space-y-2 text-xs font-mono text-white/80">
-              <li>
-                <Link href="/" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
-                  <span>Overview</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
-                  <span>About</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/feeds" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
-                  <span>Live Feeds</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
-                  <span>Terms &amp; Conditions</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
-                  <span>Privacy Policy</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-white transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-white/30 text-[10px]">›</span>
-                  <span>Contact Desk</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="text-[#F1B24A] hover:underline font-bold inline-flex items-center gap-1.5">
-                  <span className="text-[#F1B24A]/50 text-[10px]">›</span>
-                  <span>Admin Console ↗</span>
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* Column 2: Redirect Links rearranged into a list (3 cols) with Secret Admin Gesture */}
+          <FooterNavigation />
 
           {/* Column 3: Subscribe form just beside the redirect links (5 cols) */}
           <div className="md:col-span-5 space-y-2.5">

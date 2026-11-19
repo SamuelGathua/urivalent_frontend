@@ -3,10 +3,31 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function AppleStyleLanding() {
   const [activeTab, setActiveTab] = useState<"compute" | "models" | "policy">("compute");
+  const [showAdmin, setShowAdmin] = useState(false);
+  const clickCount = useRef(0);
+  const clickTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSecretTrigger = () => {
+    clickCount.current += 1;
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => {
+      clickCount.current = 0;
+    }, 800);
+    if (clickCount.current >= 3) {
+      setShowAdmin((prev) => !prev);
+      clickCount.current = 0;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (clickTimer.current) clearTimeout(clickTimer.current);
+    };
+  }, []);
 
   const appleEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -582,7 +603,11 @@ export default function AppleStyleLanding() {
             <div className="w-5 h-5 rounded-md bg-black flex items-center justify-center text-white font-semibold text-[10px]">
               U
             </div>
-            <span className="font-semibold text-zinc-900 tracking-tight">
+            <span
+              onClick={handleSecretTrigger}
+              className="font-semibold text-zinc-900 tracking-tight select-none cursor-default active:opacity-80 transition-opacity"
+              title=""
+            >
               Urivalent Inc.
             </span>
             <span className="text-zinc-400">· Independent AI Intelligence</span>
@@ -599,14 +624,16 @@ export default function AppleStyleLanding() {
             <Link href="/feeds" className="hover:text-zinc-900 transition-colors">
               Public Feed
             </Link>
-            <span className="hover:text-zinc-900 cursor-pointer transition-colors">Privacy</span>
-            <span className="hover:text-zinc-900 cursor-pointer transition-colors">Terms</span>
+            <Link href="/privacy" className="hover:text-zinc-900 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-zinc-900 transition-colors">Terms</Link>
             <a href="mailto:contact@urivalent.tech" className="hover:text-zinc-900 transition-colors">
               Contact
             </a>
-            <Link href="/admin" className="text-zinc-700 hover:text-black font-semibold">
-              Admin ↗
-            </Link>
+            {showAdmin && (
+              <Link href="/admin" className="text-amber-600 hover:text-amber-700 font-semibold transition-all">
+                Admin ↗
+              </Link>
+            )}
           </div>
         </div>
 
